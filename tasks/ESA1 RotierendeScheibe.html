@@ -23,11 +23,22 @@
   -->
 
   <style>
-    body { margin: 0; background: #ffffff; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #0055a4;
+    }
 
     #sprite {
       width: 64px;   /* Frame-Breite */
       height: 64px;  /* Frame-Höhe */
+      align-content: center;
       image-rendering: pixelated; /* falls Pixel-Art */
       overflow: hidden;
     }
@@ -39,14 +50,14 @@
 
 <h2>ESA 1 - Rotierende Scheibe</h2>
 <div id="sprite">
-  <img id="spriteSheet" src="coin_sheet.png" alt="Spritesheet">
+  <img id="spriteSheet" src="images/coin.png" alt="Spritesheet">
 </div>
 
 <script>
  
  // Konfiguration
-    const frameWidth = 64;   // Breite eines einzelnen Frames
-    const frameHeight = 64;  // Höhe eines einzelnen Frames
+    const frameWidth = 60;   // Breite eines einzelnen Frames
+    const frameHeight = 60;  // Höhe eines einzelnen Frames
     const totalFrames = 8;   // Anzahl der Frames im Spritesheet (horizontal)
     const fps = 10;          // Frames pro Sekunde
 
