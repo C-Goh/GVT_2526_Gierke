@@ -19,71 +19,183 @@
   Es ist Ihnen überlassen, ob Sie die Bilder auf mehrere Dateien verteilen, 
   oder alle Bilder der Animation als Sprite-Sheet, also in einer Datei anordnen.
   
-  
   -->
 
   <style>
     body {
+
       font-family: Arial, sans-serif;
       background: #f4f4f9;
       color: #333;
       margin: 0;
       padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
+
     h1 {
       text-align: center;
       color: #0055a4;
+      margin-bottom: 60px;
+    }
+
+    #content {
+      display: flex;
+      width: 80%; 
+      max-width: 1200px;
+      gap: 20px;
+    }
+
+    #controlls, #sprite {
+      width: 50%;
     }
 
     #controlls {
-       text-align: left;
-       background-color: #f4f4f9;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      background-color: #f4f4f9;
+      margin-right: 200px;
     }
 
     #sprite {
-      width: 64px;              /* Frame-Breite */
-      height: 64px;             /* Frame-Höhe */
-      background-image: url("../images/Coin.png"); /* Pfad anpassen! */
+      width: 540px;
+      height: 540px;
+      background-image: url("../images/Coin.png");
       background-repeat: no-repeat;
-      image-rendering: pixelated; /* für scharfe Pixel */
+      image-rendering: pixelated;
     }
+
+    button {
+      width: 50px;
+      height: 40px;
+      margin-right: 10px;
+    }
+
 
   </style>
-
 </head>
-<body>
 
-<h1>ESA 1 - Interaktiv animierte Scheibe</h2>
-<div id="controlls">
-<p>Hier kommt die Steuerung hin.</p>
-</div>
-<div id="sprite">
-</div>
+<body>
+  <h1>ESA 1 - Interaktiv animierte Scheibe</h1>
+  <div id="content">
+
+    <div id="controlls">
+    
+    <h3>Aufgabenstellung</h3>
+    <p>
+      Implementieren Sie eine sich drehende 2D-Scheibe aus Einzelbildern, 
+      welche Sie mit JavaScript laden und in einem <img> Image-Element zeigen 
+      (nicht im Canvas). Die Einzelbilder sollen, ähnlich wie bei einer 
+      Sprite-Sheet-Animation oder einem Animationsfilm, so ausgetauscht und 
+      eingeblendet werden, dass visuell der Eindruck einer Rotation entsteht. 
+      Auf jedem Einzelbild ist ein Rotationszustand der Scheibe zu sehen, 
+      z. B.: 0°, 15°, 30°, ...  
+    </p>
+
+    <p>
+      Es ist Ihnen überlassen, ob Sie die Bilder auf mehrere Dateien verteilen, 
+      oder alle Bilder der Animation als Sprite-Sheet, also in einer Datei anordnen.
+    </p>
+    
+<p>
+  Erweiterungen:
+
+  Zweites Obejekt
+  Automatische Rotation bei A bzw stopp
+  L - Stepback
+  R - Stepforward
+</p>
+
+
+    <div id="buttons">
+
+      <button id="backButton">
+        <p>Back</p>
+      </button>
+
+      <button id="toggleButton">
+        <p>Play</p>
+      </button>
+
+      <button id="forwardButton">
+        <p>Forward</p>
+      </button>
+    </div>
+
+    
+
+    </div>
+    <div id="sprite">
+
+    </div>
+
+  </div>
+
 
 <script>
+  
   const sprite = document.getElementById("sprite");
 
-    const frameWidth = 64;
-    const frameHeight = 64;
-    const cols = 4;      // Spalten im Sprite
-    const rows = 4;      // Reihen im Sprite
-    const totalFrames = cols * rows;
+  const frameWidth = 540;
+  const frameHeight = 540;
+  const cols = 4; 
+  const rows = 4;      
+  const totalFrames = cols * rows;
 
-    let currentFrame = 0;
+  let currentFrame = 0;
+  let intervalId = setInterval(updateFrame, 120);;
 
-    function updateFrame() {
-      const col = currentFrame % cols;
-      const row = Math.floor(currentFrame / cols);
+  function updateFrame() {
+    const col = currentFrame % cols;
+    const row = Math.floor(currentFrame / cols);
 
-      const x = -col * frameWidth;
-      const y = -row * frameHeight;
+    const x = -col * frameWidth;
+    const y = -row * frameHeight;
 
-      sprite.style.backgroundPosition = `${x}px ${y}px`;
+    sprite.style.backgroundPosition = `${x}px ${y}px`;
 
-      currentFrame = (currentFrame + 1) % totalFrames;
+    currentFrame = (currentFrame + 1) % totalFrames;
+  }
+
+  function toggleAnimation() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    } else {
+      intervalId = setInterval(updateFrame, 120);
     }
+  }
 
-    setInterval(updateFrame, 100); // alle 100ms ein neues Frame
+  function goForward() {
+    currentFrame = (currentFrame + 1) % totalFrames;
+    console.log(currentFrame);
+    updateFrame();
+  }
+
+  function goBackward() {
+    currentFrame = (currentFrame - 1 + totalFrames) % totalFrames;
+    console.log(currentFrame);
+    updateFrame();
+  }
+
+  // Tastendruck-Event
+  document.addEventListener("keydown", function(event) {
+    const key = event.key.toLowerCase();
+    if (key === "a") toggleAnimation();
+    if (key === "r") goForward();
+    if (key === "l") goBackward();
+  });
+
+  toggleButton.addEventListener("click", toggleAnimation);
+  backButton.addEventListener("click", goBackward);
+  forwardButton.addEventListener("click", goForward);
+
+
 
 
 </script>
