@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>ESA 1 Rotierende Scheibe</title>
+
+  <!-- Dokumentation
+   
+  Aufgabenstellung:
+  -------------------------------------------------------------------------------
+  Implementieren Sie eine sich drehende 2D-Scheibe aus Einzelbildern, 
+  welche Sie mit JavaScript laden und in einem <img> Image-Element zeigen 
+  (nicht im Canvas). Die Einzelbilder sollen, ähnlich wie bei einer 
+  Sprite-Sheet-Animation oder einem Animationsfilm, so ausgetauscht und 
+  eingeblendet werden, dass visuell der Eindruck einer Rotation entsteht. 
+  Auf jedem Einzelbild ist ein Rotationszustand der Scheibe zu sehen, 
+  z. B.: 0°, 15°, 30°, ...  
+  
+  Es ist Ihnen überlassen, ob Sie die Bilder auf mehrere Dateien verteilen, 
+  oder alle Bilder der Animation als Sprite-Sheet, also in einer Datei anordnen.
+  
+  
+  -->
+
+  <style>
+    body { margin: 0; background: #ffffff; }
+
+    #sprite {
+      width: 64px;   /* Frame-Breite */
+      height: 64px;  /* Frame-Höhe */
+      image-rendering: pixelated; /* falls Pixel-Art */
+      overflow: hidden;
+    }
+
+  </style>
+
+</head>
+<body>
+
+<h2>ESA 1 - Rotierende Scheibe</h2>
+<div id="sprite">
+  <img id="spriteSheet" src="coin_sheet.png" alt="Spritesheet">
+</div>
+
+<script>
+ 
+ // Konfiguration
+    const frameWidth = 64;   // Breite eines einzelnen Frames
+    const frameHeight = 64;  // Höhe eines einzelnen Frames
+    const totalFrames = 8;   // Anzahl der Frames im Spritesheet (horizontal)
+    const fps = 10;          // Frames pro Sekunde
+
+    const spriteSheet = document.getElementById("spriteImg");
+    let currentFrame = 0;
+
+    // Setze die Bildgröße so, dass alle Frames sichtbar wären (für Verschiebung)
+    spriteSheet.style.position = "relative";
+    spriteSheet.style.left = "0px";
+    spriteSheet.style.top = "0px";
+    spriteSheet.style.width = `${frameWidth * totalFrames}px`;
+    spriteSheet.style.height = `${frameHeight}px`;
+
+    function updateFrame() {
+      currentFrame = (currentFrame + 1) % totalFrames;
+      spriteSheet.style.left = `-${currentFrame * frameWidth}px`;
+    }
+
+    setInterval(updateFrame, 1000 / fps);
+
+</script>
+
+
+</body>
+</html>
