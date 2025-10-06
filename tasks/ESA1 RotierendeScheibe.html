@@ -41,11 +41,11 @@
     }
 
     #sprite {
-      /*width: 64px;    Frame-Breite 
-      height: 64px;  Frame-Höhe 
-      align-content: center;
-      image-rendering: pixelated; falls Pixel-Art 
-      overflow: hidden;*/
+      width: 64px;              /* Frame-Breite */
+      height: 64px;             /* Frame-Höhe */
+      background-image: url("../images/Coin.png"); /* Pfad anpassen! */
+      background-repeat: no-repeat;
+      image-rendering: pixelated; /* für scharfe Pixel */
     }
 
   </style>
@@ -58,33 +58,32 @@
 <p>Hier kommt die Steuerung hin.</p>
 </div>
 <div id="sprite">
-  <img id="spriteSheet" src="../images/Coin.png" alt="Spritesheet">
 </div>
 
 <script>
- /*
- // Konfiguration
-    const frameWidth = 520;   // Breite eines einzelnen Frames
-    const frameHeight = 520;  // Höhe eines einzelnen Frames
-    const totalFrames = 16;   // Anzahl der Frames im Spritesheet (horizontal)
-    const fps = 10;          // Frames pro Sekunde
+  const sprite = document.getElementById("sprite");
 
-    const spriteSheet = document.getElementById("spriteImg");
+    const frameWidth = 64;
+    const frameHeight = 64;
+    const cols = 4;      // Spalten im Sprite
+    const rows = 4;      // Reihen im Sprite
+    const totalFrames = cols * rows;
+
     let currentFrame = 0;
 
-    // Setze die Bildgröße so, dass alle Frames sichtbar wären (für Verschiebung)
-    spriteSheet.style.position = "relative";
-    spriteSheet.style.left = "0px";
-    spriteSheet.style.top = "0px";
-    spriteSheet.style.width = `${frameWidth * totalFrames}px`;
-    spriteSheet.style.height = `${frameHeight}px`;
-
     function updateFrame() {
+      const col = currentFrame % cols;
+      const row = Math.floor(currentFrame / cols);
+
+      const x = -col * frameWidth;
+      const y = -row * frameHeight;
+
+      sprite.style.backgroundPosition = `${x}px ${y}px`;
+
       currentFrame = (currentFrame + 1) % totalFrames;
-      spriteSheet.style.left = `-${currentFrame * frameWidth}px`;
     }
 
-    setInterval(updateFrame, 1000 / fps);
+    setInterval(updateFrame, 100); // alle 100ms ein neues Frame
 
 
 </script>
