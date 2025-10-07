@@ -72,8 +72,10 @@
 
     button {
       width: 50px;
-      height: 40px;
+      height: 50px;
       margin-right: 10px;
+      margin-top: 40px;
+      padding-bottom: 30px;
     }
 
 
@@ -97,37 +99,25 @@
       z. B.: 0°, 15°, 30°, ...  
     </p>
 
-    <p>
-      Es ist Ihnen überlassen, ob Sie die Bilder auf mehrere Dateien verteilen, 
-      oder alle Bilder der Animation als Sprite-Sheet, also in einer Datei anordnen.
-    </p>
-    
-<p>
-  Erweiterungen:
-
-  Zweites Obejekt
-  Automatische Rotation bei A bzw stopp
-  L - Stepback
-  R - Stepforward
-</p>
-
-
     <div id="buttons">
 
       <button id="backButton">
-        <p>Back</p>
+        <p>⇐</p>
       </button>
 
       <button id="toggleButton">
-        <p>Play</p>
+        <p id="toggleButtonText">◼</p>
       </button>
 
       <button id="forwardButton">
-        <p>Forward</p>
+        <p>⇒</p>
       </button>
-    </div>
 
-    
+      <button id="animationButton">
+        <p>↺</p>
+      </button>
+
+    </div>
 
     </div>
     <div id="sprite">
@@ -147,55 +137,57 @@
   const rows = 4;      
   const totalFrames = cols * rows;
 
+  const toggleButtonText = document.getElementById("toggleButtonText");
+
   let currentFrame = 0;
-  let intervalId = setInterval(updateFrame, 120);;
+  let intervalId = setInterval(nextFrame, 120);
 
-  function updateFrame() {
-    const col = currentFrame % cols;
-    const row = Math.floor(currentFrame / cols);
 
-    const x = -col * frameWidth;
-    const y = -row * frameHeight;
 
-    sprite.style.backgroundPosition = `${x}px ${y}px`;
+ function updateFrame() {
+  const col = currentFrame % cols;
+  const row = Math.floor(currentFrame / cols);
 
-    currentFrame = (currentFrame + 1) % totalFrames;
+  const x = -col * frameWidth;
+  const y = -row * frameHeight;
+
+  sprite.style.backgroundPosition = `${x}px ${y}px`;
   }
 
+  function nextFrame() {
+    currentFrame = (currentFrame + 1) % totalFrames;
+    updateFrame();
+  }
+
+  function prevFrame() {
+    currentFrame = (currentFrame - 1 + totalFrames) % totalFrames;
+    updateFrame();
+  }
+
+
+  // Automatische Animation
   function toggleAnimation() {
     if (intervalId) {
       clearInterval(intervalId);
       intervalId = null;
+      toggleButtonText.textContent = "▶";
     } else {
-      intervalId = setInterval(updateFrame, 120);
+      intervalId = setInterval(nextFrame, 120);
+      toggleButtonText.textContent = "◼";
     }
   }
 
-  function goForward() {
-    currentFrame = (currentFrame + 1) % totalFrames;
-    console.log(currentFrame);
-    updateFrame();
-  }
-
-  function goBackward() {
-    currentFrame = (currentFrame - 1 + totalFrames) % totalFrames;
-    console.log(currentFrame);
-    updateFrame();
-  }
-
-  // Tastendruck-Event
+  // Button- und Tastatur-Events
   document.addEventListener("keydown", function(event) {
     const key = event.key.toLowerCase();
     if (key === "a") toggleAnimation();
-    if (key === "r") goForward();
-    if (key === "l") goBackward();
+    if (key === "r") nextFrame();
+    if (key === "l") prevFrame();
   });
 
   toggleButton.addEventListener("click", toggleAnimation);
-  backButton.addEventListener("click", goBackward);
-  forwardButton.addEventListener("click", goForward);
-
-
+  backButton.addEventListener("click", prevFrame);
+  forwardButton.addEventListener("click", nextFrame);
 
 
 </script>
