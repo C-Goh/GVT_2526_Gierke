@@ -5,28 +5,21 @@
   <title>ESA 1 Rotierende Scheibe</title>
 
   <!-- Dokumentation
-   
-  Aufgabenstellung:
-  -------------------------------------------------------------------------------
-  Implementieren Sie eine sich drehende 2D-Scheibe aus Einzelbildern, 
-  welche Sie mit JavaScript laden und in einem <img> Image-Element zeigen 
-  (nicht im Canvas). Die Einzelbilder sollen, ähnlich wie bei einer 
-  Sprite-Sheet-Animation oder einem Animationsfilm, so ausgetauscht und 
-  eingeblendet werden, dass visuell der Eindruck einer Rotation entsteht. 
-  Auf jedem Einzelbild ist ein Rotationszustand der Scheibe zu sehen, 
-  z. B.: 0°, 15°, 30°, ...  
   
-  Es ist Ihnen überlassen, ob Sie die Bilder auf mehrere Dateien verteilen, 
-  oder alle Bilder der Animation als Sprite-Sheet, also in einer Datei anordnen.
-  
+  Bildmaterial:
+  Die Animationen wurden eigenständig mit dem Browsertool Piskel erstellt.
+
+  Steuerung:
+  Die Erweiterungen wurden alle eingebaut. Die Steuerung erfolgt über die Tasten und
+  die Buttons.
   -->
 
   <style>
     body {
 
       font-family: Arial, sans-serif;
-      background: #f4f4f9;
-      color: #333;
+      background: #262630;
+      color: #ffffff;
       margin: 0;
       padding: 20px;
       display: flex;
@@ -39,7 +32,7 @@
 
     h1 {
       text-align: center;
-      color: #0055a4;
+      color: #ffffff;
       margin-bottom: 60px;
     }
 
@@ -58,7 +51,6 @@
       display: flex;
       flex-direction: column;
       text-align: left;
-      background-color: #f4f4f9;
       margin-right: 200px;
     }
 
@@ -142,9 +134,15 @@
   let currentFrame = 0;
   let intervalId = setInterval(nextFrame, 120);
 
+  // Liste der verfügbaren Animationen
+  const animations = [
+    "../images/Coin.png",
+    "../images/Ghost.png"    
+  ];
 
+  let currentAnimationIndex = 0;
 
- function updateFrame() {
+  function updateFrame() {
   const col = currentFrame % cols;
   const row = Math.floor(currentFrame / cols);
 
@@ -177,6 +175,13 @@
     }
   }
 
+  function switchAnimation() {
+    currentAnimationIndex = (currentAnimationIndex + 1) % animations.length;
+    sprite.style.backgroundImage = `url("${animations[currentAnimationIndex]}")`;
+    currentFrame = 0; 
+    updateFrame();
+  }
+
   // Button- und Tastatur-Events
   document.addEventListener("keydown", function(event) {
     const key = event.key.toLowerCase();
@@ -188,6 +193,7 @@
   toggleButton.addEventListener("click", toggleAnimation);
   backButton.addEventListener("click", prevFrame);
   forwardButton.addEventListener("click", nextFrame);
+  animationButton.addEventListener("click", switchAnimation);
 
 
 </script>
