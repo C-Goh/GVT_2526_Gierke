@@ -132,7 +132,7 @@
   const toggleButtonText = document.getElementById("toggleButtonText");
 
   let currentFrame = 0;
-  let intervalId = setInterval(nextFrame, 120);
+  let intervalId = setInterval(nextFrame, 140);
 
   // Liste der verfügbaren Animationen
   const animations = [
@@ -170,7 +170,7 @@
       intervalId = null;
       toggleButtonText.textContent = "▶";
     } else {
-      intervalId = setInterval(nextFrame, 120);
+      intervalId = setInterval(nextFrame, 140);
       toggleButtonText.textContent = "◼";
     }
   }
