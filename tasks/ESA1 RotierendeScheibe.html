@@ -12,6 +12,8 @@
   Steuerung:
   Die Erweiterungen wurden alle eingebaut. Die Steuerung erfolgt über die Tasten und
   die Buttons.
+
+  Author: Nina Gierke
   -->
 
   <style>
@@ -33,7 +35,7 @@
     h1 {
       text-align: center;
       color: #ffffff;
-      margin-bottom: 60px;
+      margin-bottom: 40px;
     }
 
     #content {
@@ -93,6 +95,16 @@
     <p>
       Das Bildmaterial wurde eigenständig mit dem Tool Piskel erstellt.
     </p>
+    <h4>Steuerung</h4>
+      <ul>
+        <li>A - Automatisches Abspielen der Animation</li>
+        <li>L - Links drehen </li>
+        <li>R - Rechts drehen</li>
+        <li>C - Austauschen der Animation</li> 
+      </ul>
+
+
+    
 
     <div id="buttons">
 
@@ -197,6 +209,7 @@
     if (key === "a") toggleAnimation();
     if (key === "r") { stopAnimation(); nextFrame(); }
     if (key === "l") { stopAnimation(); prevFrame(); }
+    if (key === "c") switchAnimation();
   });
 
   toggleButton.addEventListener("click", toggleAnimation);
