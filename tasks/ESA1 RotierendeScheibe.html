@@ -146,13 +146,13 @@
   let currentAnimationIndex = 0;
 
   function updateFrame() {
-  const col = currentFrame % cols;
-  const row = Math.floor(currentFrame / cols);
+    const col = currentFrame % cols;
+    const row = Math.floor(currentFrame / cols);
 
-  const x = -col * frameWidth;
-  const y = -row * frameHeight;
+    const x = -col * frameWidth;
+    const y = -row * frameHeight;
 
-  sprite.style.backgroundPosition = `${x}px ${y}px`;
+    sprite.style.backgroundPosition = `${x}px ${y}px`;
   }
 
   function nextFrame() {
@@ -176,6 +176,14 @@
     }
   }
 
+  function stopAnimation() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+      toggleButtonText.textContent = "▶";
+    }
+  }
+
   function switchAnimation() {
     currentAnimationIndex = (currentAnimationIndex + 1) % animations.length;
     sprite.style.backgroundImage = `url("${animations[currentAnimationIndex]}")`;
@@ -187,13 +195,13 @@
   document.addEventListener("keydown", function(event) {
     const key = event.key.toLowerCase();
     if (key === "a") toggleAnimation();
-    if (key === "r") nextFrame();
-    if (key === "l") prevFrame();
+    if (key === "r") { stopAnimation(); nextFrame(); }
+    if (key === "l") { stopAnimation(); prevFrame(); }
   });
 
   toggleButton.addEventListener("click", toggleAnimation);
-  backButton.addEventListener("click", prevFrame);
-  forwardButton.addEventListener("click", nextFrame);
+  backButton.addEventListener("click", () => { stopAnimation(); prevFrame(); });
+  forwardButton.addEventListener("click", () => { stopAnimation(); nextFrame(); });
   animationButton.addEventListener("click", switchAnimation);
 
 
