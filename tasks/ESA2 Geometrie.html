@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>ESA 1 Rotierende Scheibe</title>
+
+  <!-- Dokumentation
+  
+  Bildmaterial:
+  Die Animationen wurden eigenständig mit dem Browsertool Piskel erstellt.
+
+  Steuerung:
+  Die Erweiterungen wurden alle eingebaut. Die Steuerung erfolgt über die Tasten und
+  die Buttons.
+
+  Author: Nina Gierke
+  -->
+
+  <style>
+    body {
+
+      font-family: Arial, sans-serif;
+      background: #262630;
+      color: #ffffff;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ffffff;
+      margin-bottom: 40px;
+    }
+
+    #content {
+      display: flex;
+      width: 80%; 
+      max-width: 1200px;
+      gap: 20px;
+    }
+
+    #controlls, #sprite {
+      width: 50%;
+    }
+
+    #controlls {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      margin-right: 200px;
+    }
+
+    #sprite {
+      width: 540px;
+      height: 540px;
+      background-image: url("../images/Coin.png");
+      background-repeat: no-repeat;
+      image-rendering: pixelated;
+    }
+
+    button {
+      width: 50px;
+      height: 50px;
+      margin-right: 10px;
+      margin-top: 40px;
+      padding-bottom: 30px;
+    }
+
+
+  </style>
+</head>
+
+<body>
+  <h1>ESA 2 - 2D Geometrie aus Linien</h1>
+  <div id="content">
+
+    <div id="controlls">
+    
+    <h3>Aufgabenstellung</h3>
+    <p>
+      Implementieren Sie eine sich drehende 2D-Scheibe aus Einzelbildern, 
+      welche Sie mit JavaScript laden und in einem <img> Image-Element zeigen 
+      (nicht im Canvas). Die Einzelbilder sollen, ähnlich wie bei einer 
+      Sprite-Sheet-Animation oder einem Animationsfilm, so ausgetauscht und 
+      eingeblendet werden, dass visuell der Eindruck einer Rotation entsteht. 
+      Auf jedem Einzelbild ist ein Rotationszustand der Scheibe zu sehen, 
+      z. B.: 0°, 15°, 30°, ...  
+    </p>
+    <p>
+      Das Bildmaterial wurde eigenständig mit dem Tool Piskel erstellt.
+    </p>
+
+    </div>
+    <div id="sprite">
+
+    </div>
+
+  </div>
+
+
+<script>
+
+
+</script>
+
+
+</body>
+</html>
