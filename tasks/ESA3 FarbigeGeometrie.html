@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>ESA 3 - Farbig gefüllte 2D Geometrie</title>
+
+  <!-- Dokumentation
+
+  Author: Nina Gierke
+  -->
+
+  <style>
+    body {
+
+      font-family: Arial, sans-serif;
+      background: #262630;
+      color: #ffffff;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    canvas {display:block; width: 550px;; height: 550px;; background:#ffffff;}
+
+    h1 {
+      text-align: center;
+      color: #ffffff;
+      margin-bottom: 60px;
+    }
+
+    #content {
+      display: flex;
+      gap: 80px;
+    }
+    
+    #task {
+      width: 40%;
+      margin-left: 100px;
+    }
+
+  </style>
+</head>
+
+<body>
+  <h1>ESA 3 - Farbig gefüllte 2D Geometrie</h1>
+  <div id="content">
+
+    <div id="task">
+    
+    <h3>Aufgabenstellung</h3>
+    <p>
+        Kolorieren Sie eine eigene 2D-Geometrie, indem Sie nun Dreiecke (keine Linien) erzeugen 
+        (Sie können auf der Lösung der vorherigen Aufgabe aufbauen). 
+        Sie können dabei einfarbige Flächen oder auch Farbverläufe einsetzen.
+    </p>
+    <p>Die Grafik wurde eigenständig entwickelt.</p>
+
+    <p>
+      Author: Nina Gierke
+    </p>
+
+    </div>
+
+    <div>
+        <canvas id="canvas" width="800" height="800"></canvas>
+    </div>
+
+  </div>
+
+
+<script>
+
+  const canvas = document.getElementById('canvas');
+  const gl = canvas.getContext('webgl');
+  if (!gl) {
+    alert('WebGL wird nicht unterstützt!');
+  }
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0,0,canvas.width,canvas.height);
+
+  // Shader
+  const vs = `
+    attribute vec2 a_pos;
+    void main() {
+      gl_Position = vec4(a_pos, 0.0, 1.0);
+    }
+  `;
+  const fs = `
+    precision mediump float;
+    uniform vec4 u_color;
+    void main() {
+      gl_FragColor = u_color;
+    }
+  `;
+
+
+  function compile(src, type) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(vs, gl.VERTEX_SHADER));
+  gl.attachShader(prog, compile(fs, gl.FRAGMENT_SHADER));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  // Fuchs-Vertices
+  const vertices = new Float32Array([
+      
+    // Kopf
+    -0.5, 0.8,
+    -0.1, 0.4,
+    0.1, 0.4,
+    0.5, 0.8,
+    0.5, 0.3,
+    0.8, 0.1,
+    0.6, -0.1,
+    0.6, -0.3,
+    0.3, -0.3,
+
+    0.1, -0.8,
+    -0.1, -0.8,
+    -0.3, -0.3,
+    -0.6, -0.3,
+    -0.6, -0.1,
+    -0.8, 0.1,
+    -0.5, 0.3,
+    -0.5, 0.8,
+
+    //Nase
+    -0.5, 0.8,
+    -0.3, 0.2,
+    -0.1, 0.1,
+    -0.1, -0.5,
+    0.0, -0.6,
+    0.1, -0.5,
+    0.1, 0.1,
+    0.3, 0.2,
+    0.5, 0.8,
+
+    //Augen
+    0.5, 0.8,
+    0.3, 0.2,
+    0.1, 0.1,
+    0.1, 0.0,
+    0.2, 0.1,
+    0.4, 0.1,
+    0.4, 0.0,
+    0.3, -0.1,
+    0.2, -0.1,
+    0.1, 0.0,
+    0.0, 0.1,
+    -0.1, 0.0,
+    -0.2, 0.1,
+    -0.4, 0.1,
+    -0.4, 0.0,
+    -0.3, -0.1,
+    -0.2, -0.1,
+    -0.1, 0.0
+
+  ]);
+
+  // Buffer
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+  const aPos = gl.getAttribLocation(prog, "a_pos");
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  // Farbe
+  const uColor = gl.getUniformLocation(prog, "u_color");
+  gl.uniform4f(uColor, 0.0, 0.0, 0.0, 1.0); // schwarz
+
+  // Zeichnen
+  gl.clearColor(1,1,1,1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.LINE_STRIP, 0, vertices.length/2);
+  
+</script>
+
+
+</body>
+</html>
