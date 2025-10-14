@@ -100,7 +100,6 @@
     }
   `;
 
-
   function compile(src, type) {
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
@@ -187,6 +186,61 @@
   gl.clearColor(1,1,1,1);
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.LINE_STRIP, 0, vertices.length/2);
+
+
+  
+// --- Farbige Füllung ---
+
+// Punkte definieren - FAN 1
+const fanVertices = new Float32Array([
+  -0.1, 0.4,   // P0 Mittelpunkt
+  -0.5, 0.8,   // P1
+  -0.3, 0.2,   // P2
+  -0.1, 0.1,   // P3
+  0.1, 0.4     // P4
+]);
+
+// Buffer für den Triangle Fan
+const fanBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, fanBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, fanVertices, gl.STATIC_DRAW);
+
+// Attribut aktivieren
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(aPos);
+
+// Farbe auf Orange setzen (RGBA)
+gl.uniform4f(uColor, 1.0, 0.5, 0.0, 1.0); // Orange
+
+// Triangle Fan zeichnen
+gl.drawArrays(gl.TRIANGLE_FAN, 0, fanVertices.length / 2);
+
+//--------------------------------------------------------------------
+
+// --- Zweiter oranger Triangle Fan ---
+// Punkte definieren (P0 zuerst)
+const fanVertices2 = new Float32Array([
+  0.1, 0.4,    // P0 Mittelpunkt
+  -0.1, 0.1,   // P1
+  0.1, 0.1,    // P2
+  0.3, 0.2,    // P3
+  0.5, 0.8     // P4
+]);
+
+// Buffer für den zweiten Fan
+const fanBuffer2 = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, fanBuffer2);
+gl.bufferData(gl.ARRAY_BUFFER, fanVertices2, gl.STATIC_DRAW);
+
+// Attribut aktivieren
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(aPos);
+
+// Farbe erneut auf Orange setzen
+gl.uniform4f(uColor, 1.0, 0.5, 0.0, 1.0); // Orange
+
+// Zweiten Triangle Fan zeichnen
+gl.drawArrays(gl.TRIANGLE_FAN, 0, fanVertices2.length / 2);
   
 </script>
 
