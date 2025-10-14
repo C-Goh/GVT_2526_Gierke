@@ -51,19 +51,15 @@
   <div id="content">
 
     <div id="task">
-    
-    <h3>Aufgabenstellung</h3>
-    <p>
-        Kolorieren Sie eine eigene 2D-Geometrie, indem Sie nun Dreiecke (keine Linien) erzeugen 
-        (Sie können auf der Lösung der vorherigen Aufgabe aufbauen). 
-        Sie können dabei einfarbige Flächen oder auch Farbverläufe einsetzen.
-    </p>
-    <p>Die Grafik wurde eigenständig entwickelt.</p>
+      <h3>Aufgabenstellung</h3>
+      <p>
+          Kolorieren Sie eine eigene 2D-Geometrie, indem Sie nun Dreiecke (keine Linien) erzeugen 
+          (Sie können auf der Lösung der vorherigen Aufgabe aufbauen). 
+          Sie können dabei einfarbige Flächen oder auch Farbverläufe einsetzen.
+      </p>
+      <p>Die Grafik wurde eigenständig entwickelt.</p>
 
-    <p>
-      Author: Nina Gierke
-    </p>
-
+      <p> Author: Nina Gierke</p>
     </div>
 
     <div>
@@ -114,12 +110,10 @@
   const aPos = gl.getAttribLocation(prog, "a_pos");
   const uColor = gl.getUniformLocation(prog, "u_color");
 
-  // Hintergrund dunkelblau
   gl.clearColor(0.0, 0.0, 0.3, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  // -----------------------------------------------------------
-  // Hilfsfunktion zum Zeichnen beliebiger Flächen
+  // Funktion zum Zeichnen beliebiger Flächen
   function drawShape(vertices, color, mode = gl.TRIANGLES) {
     const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -131,9 +125,9 @@
   }
 
   // -----------------------------------------------------------
-  // Linienzeichnung (bleibt erhalten)
-  const vertices = new Float32Array([
-    // Kopf & Konturen
+  // Fuchskontur
+  const lineVertices = new Float32Array([
+ // Kopf
     -0.5, 0.8,
     -0.1, 0.4,
     0.1, 0.4,
@@ -143,6 +137,7 @@
     0.6, -0.1,
     0.6, -0.3,
     0.3, -0.3,
+
     0.1, -0.8,
     -0.1, -0.8,
     -0.3, -0.3,
@@ -150,19 +145,50 @@
     -0.6, -0.1,
     -0.8, 0.1,
     -0.5, 0.3,
-    -0.5, 0.8
+    -0.5, 0.8,
+
+    //Nase
+    -0.5, 0.8,
+    -0.3, 0.2,
+    -0.1, 0.1,
+    -0.1, -0.5,
+    0.0, -0.6,
+    0.1, -0.5,
+    0.1, 0.1,
+    0.3, 0.2,
+    0.5, 0.8,
+
+    //Augen
+    0.5, 0.8,
+    0.3, 0.2,
+    0.1, 0.1,
+    0.1, 0.0,
+    0.2, 0.1,
+    0.4, 0.1,
+    0.4, 0.0,
+    0.3, -0.1,
+    0.2, -0.1,
+    0.1, 0.0,
+    0.0, 0.1,
+    -0.1, 0.0,
+    -0.2, 0.1,
+    -0.4, 0.1,
+    -0.4, 0.0,
+    -0.3, -0.1,
+    -0.2, -0.1,
+    -0.1, 0.0
   ]);
 
   const lineBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, lineBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, lineVertices, gl.STATIC_DRAW);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(aPos);
   gl.uniform4f(uColor, 0.0, 0.0, 0.0, 1.0); // Schwarz
-  gl.drawArrays(gl.LINE_STRIP, 0, vertices.length / 2);
+  gl.drawArrays(gl.LINE_STRIP, 0, lineVertices.length / 2);
 
   // -----------------------------------------------------------
-  // Farbflächen mit drawShape()
+  // Farbflächen
 
   // Linke Gesichtsseite
   drawShape([
@@ -194,10 +220,70 @@
     -0.1, -0.5, 0.1, -0.5, 0.0, -0.6
   ], [0.4, 0.2, 0.0, 1.0], gl.TRIANGLES);
 
-  // Schnauze (hellgrau)
+  // Schnauze
   drawShape([
     0.0, -0.6, -0.1, -0.8, 0.1, -0.8
   ], [0.8, 0.8, 0.8, 1.0], gl.TRIANGLES);
+
+  // Schnauze rechts
+  drawShape([
+    -0.1, -0.8, 0.0, -0.6, -0.1, -0.5, -0.1, -0.3, -0.3, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Schnauze links
+  drawShape([
+    0.1, -0.8, 0.0, -0.6, 0.1, -0.5, 0.1, -0.3, 0.3, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Augenhöhle rechts
+  drawShape([
+    0.1, 0.1, 0.3, 0.2, 0.4, 0.1, 0.2, 0.1, 0.1, 0.0
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Augenhöhle links
+  drawShape([
+    -0.1, 0.1, -0.3, 0.2, -0.4, 0.1, -0.2, 0.1, -0.1, 0.0
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Unterauge links
+  drawShape([
+    -0.1, 0.0, -0.1, -0.3, -0.4, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLES);
+
+  // Unterauge rechts
+  drawShape([
+    0.1, 0.0, 0.1, -0.3, 0.4, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLES);
+
+  // Außenwange links
+  drawShape([
+    -0.4, -0.3, -0.2, -0.1, -0.3, -0.1, -0.4, 0.0, -0.4, 0.0, -0.4, 0.1, -0.6, -0.1, -0.6, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Außenwange rechts
+  drawShape([
+    0.4, -0.3, 0.2, -0.1, 0.3, -0.1, 0.4, 0.0, 0.4, 0.0, 0.4, 0.1, 0.6, -0.1, 0.6, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Auge links
+  drawShape([
+    -0.2, 0.1, -0.1, 0.0, -0.2, -0.1, -0.3, -0.1, -0.4, 0.0, -0.4, 0.1
+  ], [0.3, 0.9, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Auge rechts
+  drawShape([
+    0.2, 0.1, 0.1, 0.0, 0.2, -0.1, 0.3, -0.1, 0.4, 0.0, 0.4, 0.1
+  ], [0.3, 0.9, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Ohr links
+  drawShape([
+    -0.5, 0.8, -0.3, 0.2, -0.5, 0.3
+  ], [0.9, 0.4, 0.6, 1.0], gl.TRIANGLES);
+
+  // Ohr rechts
+  drawShape([
+    0.5, 0.8, 0.3, 0.2, 0.5, 0.3
+  ], [0.9, 0.4, 0.6, 1.0], gl.TRIANGLES);
 
 </script>
 
