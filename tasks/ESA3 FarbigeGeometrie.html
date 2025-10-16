@@ -82,15 +82,21 @@
   // Shader
   const vs = `
     attribute vec2 a_pos;
+    attribute vec4 a_color;
+    varying vec4 v_color;
+
     void main() {
       gl_Position = vec4(a_pos, 0.0, 1.0);
+      v_color = a_color;
     }
   `;
+
   const fs = `
     precision mediump float;
-    uniform vec4 u_color;
+    varying vec4 v_color;
+
     void main() {
-      gl_FragColor = u_color;
+      gl_FragColor = v_color;
     }
   `;
 
@@ -98,6 +104,9 @@
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
     gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error('Shader Fehler:', gl.getShaderInfoLog(s));
+    }
     return s;
   }
 
@@ -108,21 +117,43 @@
   gl.useProgram(prog);
 
   const aPos = gl.getAttribLocation(prog, "a_pos");
-  const uColor = gl.getUniformLocation(prog, "u_color");
+  const aColor = gl.getAttribLocation(prog, "a_color");
 
   gl.clearColor(0.0, 0.0, 0.3, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  // Funktion zum Zeichnen beliebiger Flächen
+  // -----------------------------------------------------------
+  // Erweiterte drawShape()-Funktion (unterstützt Farbverlauf oder Einzelfarbe)
   function drawShape(vertices, color, mode = gl.TRIANGLES) {
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    // Positionen
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(aPos);
-    gl.uniform4f(uColor, ...color);
+
+    // Farben
+    const colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+
+    let colorArray;
+    if (color.length === 4) {
+      // eine Farbe → für jeden Vertex wiederholen
+      const count = vertices.length / 2;
+      colorArray = [];
+      for (let i = 0; i < count; i++) colorArray.push(...color);
+    } else {
+      // mehrere Farben → direkt übernehmen
+      colorArray = color;
+    }
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorArray), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(aColor, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(aColor);
+
     gl.drawArrays(mode, 0, vertices.length / 2);
   }
+
 
   // -----------------------------------------------------------
   // Farbflächen
@@ -157,10 +188,16 @@
     -0.1, -0.5, 0.1, -0.5, 0.0, -0.6
   ], [0.4, 0.2, 0.0, 1.0], gl.TRIANGLES);
 
-  // Schnauze
-  drawShape([
-    0.0, -0.6, -0.1, -0.8, 0.1, -0.8
-  ], [0.8, 0.8, 0.8, 1.0], gl.TRIANGLES);
+// Schnauze mit Farbverlauf
+drawShape([
+  0.0, -0.6,
+  -0.1, -0.8, 
+  0.1, -0.8 
+], [
+  0.9, 0.9, 0.9, 1.0,
+  0.6, 0.6, 0.6, 1.0,
+  0.6, 0.6, 0.6, 1.0 
+], gl.TRIANGLES);
 
   // Schnauze rechts
   drawShape([
@@ -202,15 +239,29 @@
     0.4, -0.3, 0.2, -0.1, 0.3, -0.1, 0.4, 0.0, 0.4, 0.0, 0.4, 0.1, 0.6, -0.1, 0.6, -0.3
   ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
 
-  // Auge links
+ // Auge links mit Verlauf:
   drawShape([
     -0.2, 0.1, -0.1, 0.0, -0.2, -0.1, -0.3, -0.1, -0.4, 0.0, -0.4, 0.1
-  ], [0.3, 0.9, 1.0, 1.0], gl.TRIANGLE_FAN);
+  ], [
+    0.6, 0.95, 1.0, 1.0,  // hell oben
+    0.5, 0.9, 1.0, 1.0,
+    0.3, 0.7, 0.9, 1.0,   // dunkler unten
+    0.3, 0.7, 0.9, 1.0,
+    0.5, 0.9, 1.0, 1.0,
+    0.6, 0.95, 1.0, 1.0
+  ], gl.TRIANGLE_FAN);
 
-  // Auge rechts
+  //Auge rechts mit Verlauf:
   drawShape([
     0.2, 0.1, 0.1, 0.0, 0.2, -0.1, 0.3, -0.1, 0.4, 0.0, 0.4, 0.1
-  ], [0.3, 0.9, 1.0, 1.0], gl.TRIANGLE_FAN);
+  ], [
+    0.6, 0.95, 1.0, 1.0,
+    0.5, 0.9, 1.0, 1.0,
+    0.3, 0.7, 0.9, 1.0,
+    0.3, 0.7, 0.9, 1.0,
+    0.5, 0.9, 1.0, 1.0,
+    0.6, 0.95, 1.0, 1.0
+  ], gl.TRIANGLE_FAN);
 
   // Ohr links
   drawShape([
