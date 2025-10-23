@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>ESA 2 - 2D Geometrie</title>
+  <title>ESA 4 - Parametrisierte Flächen</title>
 
   <!-- Dokumentation
 
@@ -47,23 +47,29 @@
 </head>
 
 <body>
-  <h1>ESA 2 - 2D Geometrie aus Linien</h1>
+  <h1>ESA 4 - Parametrisierte Flächen</h1>
   <div id="content">
 
     <div id="task">
-    
-    <h3>Aufgabenstellung</h3>
-    <p>
-        Erstellen Sie eine eigene 2D-Geometrie aus Linien (etwa 30 Vertices) 
-        und stellen Sie diese mittels WebGL dar. Dabei können Sie GL_LINES, 
-        GL_LINE_STRIP oder GL_LINE_LOOP verwenden.
-    </p>
-    <p>Die Grafik wurde eigenständig entwickelt.</p>
+      <h3>Aufgabenstellung</h3>
+      <p>
+          1 - Erzeugen Sie zwei neue parametrisierte Flächen (die nicht im Modul vorkommen) 
+          zunächst mit Linien, siehe Material (dort gibt es viele Formeln, die Sie verwenden können).
 
-    <p>
-      Author: Nina Gierke
-    </p>
+          2 - Füllen Sie dann die Flächen und kolorieren Sie sie passend zur jeweiligen Flächenform, 
+          z. B. mit Farbverläufen. Die Linien sollen noch sichtbar sein, oder es besteht die Möglichkeit, 
+          zwischen Linien und Füllung umzuschalten.
 
+          3 - Kreieren Sie auch eine eigene Parametrisierung für eine Fläche und kolorieren Sie diese. 
+          Dazu sollen Sie sich eine neue Formel ausdenken, diese können Sie natürlich auf der Basis 
+          der vorhandenen Formeln aufbauen (aus dem Modul oder aus dem Material). 
+          Versuchen Sie Terme zu mischen und schauen Sie, ob das passiert, was Sie erwarten. 
+          Alternativ suchen Sie sich eine Form und versuchen Sie diese zu erzeugen, 
+          vielleicht „eine Qualle“ oder Ihre Lampe (dieses Vorgehen ist meist schwieriger).
+      </p>
+      <p>Die Grafik wurde eigenständig entwickelt.</p>
+
+      <p> Author: Nina Gierke</p>
     </div>
 
     <div>
@@ -74,121 +80,123 @@
 
 
 <script>
+			// Get the WebGL context.
+			var canvas = document.getElementById('canvas');
+			var gl = canvas.getContext('experimental-webgl');
 
-  const canvas = document.getElementById('canvas');
-  const gl = canvas.getContext('webgl');
-  if (!gl) {
-    alert('WebGL wird nicht unterstützt!');
-  }
+			// Pipeline setup.
+			gl.clearColor(.95, .95, .95, 1);
+			// Backface culling.
+			gl.frontFace(gl.CCW);
+			gl.enable(gl.CULL_FACE);
+			gl.cullFace(gl.BACK);
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  gl.viewport(0,0,canvas.width,canvas.height);
+			// Compile vertex shader. 
+			var vsSource = '' + 
+				'attribute vec3 pos;' + 
+				'attribute vec4 col;' + 
+				'varying vec4 color;' + 
+				'void main(){' + 'color = col;' + 
+				'gl_Position = vec4(pos, 1);' +
+				'}';
+			var vs = gl.createShader(gl.VERTEX_SHADER);
+			gl.shaderSource(vs, vsSource);
+			gl.compileShader(vs);
 
-  // Shader
-  const vs = `
-    attribute vec2 a_pos;
-    void main() {
-      gl_Position = vec4(a_pos, 0.0, 1.0);
-    }
-  `;
-  const fs = `
-    precision mediump float;
-    uniform vec4 u_color;
-    void main() {
-      gl_FragColor = u_color;
-    }
-  `;
+			// Compile fragment shader.
+			fsSouce = 'precision mediump float;' + 
+				'varying vec4 color;' + 
+				'void main() {' + 
+				'gl_FragColor = color;' + 
+				'}';
+			var fs = gl.createShader(gl.FRAGMENT_SHADER);
+			gl.shaderSource(fs, fsSouce);
+			gl.compileShader(fs);
 
+			// Link shader together into a program.
+			var prog = gl.createProgram();
+			gl.attachShader(prog, vs);
+			gl.attachShader(prog, fs);
+			gl.bindAttribLocation(prog, 0, "pos");
+			gl.linkProgram(prog);
+			gl.useProgram(prog);
 
-  function compile(src, type) {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    return s;
-  }
+			// Vertex data.
+			// Positions, index data.
+			var vertices, indices;
+			// Fill the data arrays.
+			createVertexData();
 
-  const prog = gl.createProgram();
-  gl.attachShader(prog, compile(vs, gl.VERTEX_SHADER));
-  gl.attachShader(prog, compile(fs, gl.FRAGMENT_SHADER));
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
+			// Setup position vertex buffer object.
+			var vboPos = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, vboPos);
+			gl.bufferData(gl.ARRAY_BUFFER,
+				vertices, gl.STATIC_DRAW);
+			// Bind vertex buffer to attribute variable.
+			var posAttrib = gl.getAttribLocation(prog, 'pos');
+			gl.vertexAttribPointer(posAttrib, 3,
+				gl.FLOAT, false, 0, 0);
+			gl.enableVertexAttribArray(posAttrib);
 
-  // Fuchs-Vertices
-  const vertices = new Float32Array([
-      
-    // Kopf
-    -0.5, 0.8,
-    -0.1, 0.4,
-    0.1, 0.4,
-    0.5, 0.8,
-    0.5, 0.3,
-    0.8, 0.1,
-    0.6, -0.1,
-    0.6, -0.3,
-    0.3, -0.3,
+			// Setup constant color.
+			var colAttrib = gl.getAttribLocation(prog, 'col');
+			gl.vertexAttrib4f(colAttrib, 0, 0, 1, 1);
 
-    0.1, -0.8,
-    -0.1, -0.8,
-    -0.3, -0.3,
-    -0.6, -0.3,
-    -0.6, -0.1,
-    -0.8, 0.1,
-    -0.5, 0.3,
-    -0.5, 0.8,
+			// Setup index buffer object.
+			var ibo = gl.createBuffer();
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+				indices, gl.STATIC_DRAW);
+			ibo.numberOfElements = indices.length;
 
-    //Nase
-    -0.5, 0.8,
-    -0.3, 0.2,
-    -0.1, 0.1,
-    -0.1, -0.5,
-    0.0, -0.6,
-    0.1, -0.5,
-    0.1, 0.1,
-    0.3, 0.2,
-    0.5, 0.8,
+			// Clear framebuffer and render primitives.
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.drawElements(gl.LINE_STRIP,
+				ibo.numberOfElements, gl.UNSIGNED_SHORT, 0);
+				
+			function createVertexData(){
+        var n = 20; // Winkelunterteilung
+        var m = 8; // Höhenunterteilung
+        var R = 0.3; // Zylinderradius
+        var H = 1.5; // Zylinderhöhe
 
-    //Augen
-    0.5, 0.8,
-    0.3, 0.2,
-    0.1, 0.1,
-    0.1, 0.0,
-    0.2, 0.1,
-    0.4, 0.1,
-    0.4, 0.0,
-    0.3, -0.1,
-    0.2, -0.1,
-    0.1, 0.0,
-    0.0, 0.1,
-    -0.1, 0.0,
-    -0.2, 0.1,
-    -0.4, 0.1,
-    -0.4, 0.0,
-    -0.3, -0.1,
-    -0.2, -0.1,
-    -0.1, 0.0
+        vertices = new Float32Array(3 * (n + 1) * (m + 1));
+        indices  = new Uint16Array(2 * 2 * n * m);
 
-  ]);
+        var dt = 2 * Math.PI / n;
+        var dy = H / m;
 
-  // Buffer
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+        var iIndex = 0;
 
-  const aPos = gl.getAttribLocation(prog, "a_pos");
-  gl.enableVertexAttribArray(aPos);
-  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+        for (var i = 0, t = 0; i <= n; i++, t += dt) {
+            for (var j = 0; j <= m; j++) {
+                var iVertex = i * (m + 1) + j;
 
-  // Farbe
-  const uColor = gl.getUniformLocation(prog, "u_color");
-  gl.uniform4f(uColor, 0.0, 0.0, 0.0, 1.0); // schwarz
+                // Zylinderkoordinaten
+                var x = R * Math.cos(t);
+                var z = R * Math.sin(t);
+                var y = -H / 2 + j * dy;
 
-  // Zeichnen
-  gl.clearColor(1,1,1,1);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.LINE_STRIP, 0, vertices.length/2);
-  
-</script>
+                vertices[iVertex * 3]     = x;
+                vertices[iVertex * 3 + 1] = y;
+                vertices[iVertex * 3 + 2] = z;
+
+                // Verbinde nur horizontale Linien (Ringe)
+                if (j > 0) {
+                  indices[iIndex++] = iVertex - 1;
+                  indices[iIndex++] = iVertex;
+                }
+
+                // Verbinde nur vertikale Linien (Höhen)
+                if (i > 0) {
+                  indices[iIndex++] = iVertex - (m + 1);
+                  indices[iIndex++] = iVertex;
+                }
+                }
+            }
+        }
+            
+		</script>
 
 
 </body>
