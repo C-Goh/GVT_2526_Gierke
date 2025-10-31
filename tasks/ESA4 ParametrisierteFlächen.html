@@ -10,48 +10,51 @@
   Author: Nina Gierke
   -->
 
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #262630;
-    color: #ffffff;
-    margin: 0;
-    padding: 20px;
-    min-height: 100vh;
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #262630;
+      color: #ffffff;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-  }
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
 
-  h1 {
-    text-align: center;
-    margin-bottom: 30px;
-  }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
 
-  #task {
-    max-width: 600px;
-    margin-bottom: 40px;
-  }
+    #task {
+      max-width: 600px;
+      margin-bottom: 40px;
+    }
 
-  #panelCanvas {
-    display: flex;
-    flex-direction: row; /* Nebeneinander statt untereinander */
-    align-items: flex-start;
-    justify-content: center;
-    gap: 30px; /* Abstand zwischen den Canvases */
-    width: 100%;
-    flex-wrap: wrap; /* Falls Bildschirm zu klein ist, umbrechen */
-  }
+    #panelCanvas {
+      display: flex;
+      flex-direction: row;
+      /* Nebeneinander statt untereinander */
+      align-items: flex-start;
+      justify-content: center;
+      gap: 30px;
+      /* Abstand zwischen den Canvases */
+      width: 100%;
+      flex-wrap: wrap;
+      /* Falls Bildschirm zu klein ist, umbrechen */
+    }
 
-  canvas {
-    width: 550px;
-    height: 550px;
-    background: #ffffff;
-    display: block;
-  }
-</style>
+    canvas {
+      width: 550px;
+      height: 550px;
+      background: #ffffff;
+      display: block;
+    }
+  </style>
 </head>
 
 <body>
@@ -83,195 +86,215 @@
 
 
 
-<script>
-function render(canvas, mode) {
+  <script>
+    function render(canvas, mode) {
 
-  let gl = canvas.getContext("experimental-webgl");
-  gl.clearColor(1,1,1,1);
-  gl.enable(gl.DEPTH_TEST);
+      let gl = canvas.getContext("experimental-webgl");
+      gl.clearColor(1, 1, 1, 1);
+      gl.enable(gl.DEPTH_TEST);
 
-  /* Shader */
-  const vsSource = `
-    attribute vec3 pos;
-    attribute vec4 col;
-    varying vec4 vColor;
-    void main(){
-      vColor = col;
-      gl_Position = vec4(pos, 1.0);
-    }
-  `;
-  const fsSource = `
-    precision mediump float;
-    varying vec4 vColor;
-    void main() {
-      gl_FragColor = vColor;
-    }
-  `;
+      /* Shader */
+      const vsSource = `
+      attribute vec3 pos;
+      attribute vec4 col;
+      varying vec4 vColor;
+      void main(){
+        vColor = col;
+        gl_Position = vec4(pos, 1.0);
+      }
+    `;
+      const fsSource = `
+      precision mediump float;
+      varying vec4 vColor;
+      void main() {
+        gl_FragColor = vColor;
+      }
+    `;
 
-  function compile(type, src){
-    let s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    return s;
-  }
-  let prog = gl.createProgram();
-  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
-  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
+      function compile(type, src) {
+        let s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return s;
+      }
+      let prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
 
-  let vertices, colors, lineIndices, fillIndices;
+      let vertices, colors, lineIndices, fillIndices;
 
-  if(mode==="zylinder") createZylinder();
-  if(mode==="sanduhr")  createSanduhr();
-  if(mode==="qualle")   createQualle();
+      if (mode === "zylinder") createZylinder();
+      if (mode === "sanduhr") createSanduhr();
+      if (mode === "qualle") createQualle();
 
-  /* Position buffer */
-  let vboPos = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vboPos);
-  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-  let aPos = gl.getAttribLocation(prog,"pos");
-  gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,0,0);
-  gl.enableVertexAttribArray(aPos);
+      /* Position buffer */
+      let vboPos = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vboPos);
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+      let aPos = gl.getAttribLocation(prog, "pos");
+      gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(aPos);
 
-  /* Color buffer */
-  let vboCol = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vboCol);
-  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-  let aCol = gl.getAttribLocation(prog,"col");
-  gl.vertexAttribPointer(aCol,4,gl.FLOAT,false,0,0);
-  gl.enableVertexAttribArray(aCol);
+      /* Color buffer */
+      let vboCol = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vboCol);
+      gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+      let aCol = gl.getAttribLocation(prog, "col");
+      gl.vertexAttribPointer(aCol, 4, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(aCol);
 
-  /* Fill (triangles) */
-  let iboFill = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboFill);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, fillIndices, gl.STATIC_DRAW);
+      /* Fill (triangles) */
+      let iboFill = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboFill);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, fillIndices, gl.STATIC_DRAW);
 
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  gl.drawElements(gl.TRIANGLES, fillIndices.length, gl.UNSIGNED_SHORT, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.drawElements(gl.TRIANGLES, fillIndices.length, gl.UNSIGNED_SHORT, 0);
 
-  /* Line overlay = Schwarz */
-  let iboLine = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboLine);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, lineIndices, gl.STATIC_DRAW);
+      /* Line overlay = Schwarz */
+      let iboLine = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboLine);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, lineIndices, gl.STATIC_DRAW);
 
-  /* Farbe für Linien überschreiben */
-  gl.disableVertexAttribArray(aCol);       // keine Farb-Attribute mehr lesen
-  gl.vertexAttrib4f(aCol, 0, 0, 0, 1);     // Schwarz setzen (R,G,B,A)
+      /* Farbe für Linien überschreiben */
+      gl.disableVertexAttribArray(aCol);       // keine Farb-Attribute mehr lesen
+      gl.vertexAttrib4f(aCol, 0, 0, 0, 1);     // Schwarz setzen (R,G,B,A)
 
-  /* Linien zeichnen */
-  gl.lineWidth(1.0);
-  gl.drawElements(gl.LINES, lineIndices.length, gl.UNSIGNED_SHORT, 0);
+      /* Linien zeichnen */
+      gl.lineWidth(1.0);
+      gl.drawElements(gl.LINES, lineIndices.length, gl.UNSIGNED_SHORT, 0);
 
-  /* Farb-Attribute wieder aktivieren für nächste Figur */
-  gl.enableVertexAttribArray(aCol);
+      /* Farb-Attribute wieder aktivieren für nächste Figur */
+      gl.enableVertexAttribArray(aCol);
 
 
-  /* -------- SHAPE FUNCTIONS -------- */
+      /* -------- SHAPE FUNCTIONS -------- */
 
-  function setup(n,m){
-    vertices = new Float32Array(3*(n+1)*(m+1));
-    colors   = new Float32Array(4*(n+1)*(m+1));
-    lineIndices = [];
-    fillIndices = [];
+      function setup(n, m) {
+        vertices = new Float32Array(3 * (n + 1) * (m + 1));
+        colors = new Float32Array(4 * (n + 1) * (m + 1));
+        lineIndices = [];
+        fillIndices = [];
 
-    return {n,m};
-  }
+        return { n, m };
+      }
 
-  function connectGrid(n,m){
-    // Linien und Dreiecke erzeugen
-    for(let i=0;i<n;i++){
-      for(let j=0;j<m;j++){
-        let a=i*(m+1)+j;
-        let b=a+1;
-        let c=(i+1)*(m+1)+j;
-        let d=c+1;
+      function connectGrid(n, m) {
+        // Linien und Dreiecke erzeugen
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < m; j++) {
+            let a = i * (m + 1) + j;
+            let b = a + 1;
+            let c = (i + 1) * (m + 1) + j;
+            let d = c + 1;
 
-        // Linien
-        lineIndices.push(a,b, a,c);
+            // Linien
+            lineIndices.push(a, b, a, c);
 
-        // Dreiecke (Flächenfüllung)
-        fillIndices.push(a,b,c,  b,d,c);
+            // Dreiecke (Flächenfüllung)
+            fillIndices.push(a, b, c, b, d, c);
+          }
+        }
+        lineIndices = new Uint16Array(lineIndices);
+        fillIndices = new Uint16Array(fillIndices);
+      }
+
+      function colorByHeight(v, j, m) {
+        let h = j / m;
+        colors[4 * v] = 0.2 * (1 - h);
+        colors[4 * v + 1] = 0.5 + 0.5 * h;
+        colors[4 * v + 2] = 1;
+        colors[4 * v + 3] = 1;
+      }
+
+      //Sanduhr
+      function createSanduhr() {
+        let n = 64, m = 40;
+        setup(n, m);
+        let R0 = 0.8, H = 1.6, k = 1.8;
+        let dt = 2 * Math.PI / n, dy = H / m;
+
+        for (let i = 0, t = 0; i <= n; i++, t += dt)
+          for (let j = 0; j <= m; j++) {
+            let v = i * (m + 1) + j;
+            let y = -H / 2 + j * dy;
+            let ny = (2 * y) / H;
+            let R = R0 * (1 - k * (1 - ny * ny));
+            vertices[3 * v] = R * Math.cos(t);
+            vertices[3 * v + 1] = y;
+            vertices[3 * v + 2] = R * Math.sin(t);
+            colorByHeight(v, j, m);
+          }
+        connectGrid(n, m);
+      }
+
+      // Zylinder
+      function createZylinder() {
+        let n = 64, m = 40;
+        setup(n, m);
+        let R = 0.8, H = 1.6;
+        let dt = 2 * Math.PI / n, dy = H / m;
+
+        for (let i = 0, t = 0; i <= n; i++, t += dt)
+          for (let j = 0; j <= m; j++) {
+            let v = i * (m + 1) + j;
+            let y = -H / 2 + j * dy;
+            vertices[3 * v] = R * Math.cos(t);
+            vertices[3 * v + 1] = y;
+            vertices[3 * v + 2] = R * Math.sin(t);
+            colorByHeight(v, j, m);
+          }
+        connectGrid(n, m);
+      }
+
+      // Qualle
+      /* --- eigene Fläche: Qualle/Vase --- */
+      function createQualle() {
+        let n = 64, m = 60;
+        setup(n, m);
+        let R = 0.6, H = 1.8, a = 0.25, k = 6;
+        let dt = 2 * Math.PI / n, dy = H / m;
+
+        for (let i = 0, t = 0; i <= n; i++, t += dt)
+          for (let j = 0; j <= m; j++) {
+            let v = i * (m + 1) + j;
+            let y = -H / 2 + j * dy;
+            let r = R + a * Math.sin(k * y * 2.0);
+            vertices[3 * v] = r * Math.cos(t);
+            vertices[3 * v + 1] = y;
+            vertices[3 * v + 2] = r * Math.sin(t);
+
+            // Farbverlauf von Pink (unten) nach Lila (oben)
+            let h = j / m;
+            let pink = [1.0, 0.4, 0.7];
+            let lila = [0.6, 0.2, 0.8];
+            let yellow = [1.0, 1.0, 0.2];
+
+            if (i % 2 === 0) {
+              // jede zweite vertikale Reihe wird gelb
+              colors[4 * v] = yellow[0];
+              colors[4 * v + 1] = yellow[1];
+              colors[4 * v + 2] = yellow[2];
+              colors[4 * v + 3] = 1.0;
+            } else {
+              // sonst Farbverlauf Pink → Lila
+              colors[4 * v] = pink[0] * (1 - h) + lila[0] * h;
+              colors[4 * v + 1] = pink[1] * (1 - h) + lila[1] * h;
+              colors[4 * v + 2] = pink[2] * (1 - h) + lila[2] * h;
+              colors[4 * v + 3] = 1.0;
+            }
+          }
+        connectGrid(n, m);
       }
     }
-    lineIndices = new Uint16Array(lineIndices);
-    fillIndices = new Uint16Array(fillIndices);
-  }
 
-  function colorByHeight(v,j,m){
-    let h=j/m;
-    colors[4*v]   = 0.2*(1-h);
-    colors[4*v+1] = 0.5+0.5*h;
-    colors[4*v+2] = 1;
-    colors[4*v+3] = 1;
-  }
 
-  /* --- Sanduhr --- */
-  function createSanduhr(){
-    let n=64, m=40;
-    setup(n,m);
-    let R0=0.8, H=1.6, k=1.8;
-    let dt=2*Math.PI/n, dy=H/m;
-
-    for(let i=0,t=0;i<=n;i++,t+=dt)
-    for(let j=0;j<=m;j++){
-      let v=i*(m+1)+j;
-      let y=-H/2+j*dy;
-      let ny=(2*y)/H;
-      let R=R0*(1-k*(1-ny*ny));
-      vertices[3*v]=R*Math.cos(t);
-      vertices[3*v+1]=y;
-      vertices[3*v+2]=R*Math.sin(t);
-      colorByHeight(v,j,m);
-    }
-    connectGrid(n,m);
-  }
-
-  /* --- Zylinder --- */
-  function createZylinder(){
-    let n=64, m=40;
-    setup(n,m);
-    let R=0.8, H=1.6;
-    let dt=2*Math.PI/n, dy=H/m;
-
-    for(let i=0,t=0;i<=n;i++,t+=dt)
-    for(let j=0;j<=m;j++){
-      let v=i*(m+1)+j;
-      let y=-H/2+j*dy;
-      vertices[3*v]=R*Math.cos(t);
-      vertices[3*v+1]=y;
-      vertices[3*v+2]=R*Math.sin(t);
-      colorByHeight(v,j,m);
-    }
-    connectGrid(n,m);
-  }
-
-  /* --- eigene Fläche: Qualle/Vase --- */
-  function createQualle(){
-    let n=64, m=60;
-    setup(n,m);
-    let R=0.6, H=1.8, a=0.25, k=6;
-    let dt=2*Math.PI/n, dy=H/m;
-
-    for(let i=0,t=0;i<=n;i++,t+=dt)
-    for(let j=0;j<=m;j++){
-      let v=i*(m+1)+j;
-      let y=-H/2+j*dy;
-      let r=R + a*Math.sin(k*y*2.0);
-      vertices[3*v]=r*Math.cos(t);
-      vertices[3*v+1]=y;
-      vertices[3*v+2]=r*Math.sin(t);
-      colorByHeight(v,j,m);
-    }
-    connectGrid(n,m);
-  }
-}
-
-/* render canvases */
-render(document.getElementById("canvas"), "zylinder");
-render(document.getElementById("canvas2"), "sanduhr");
-render(document.getElementById("canvas3"), "qualle");
-</script>
+    render(document.getElementById("canvas"), "zylinder");
+    render(document.getElementById("canvas2"), "sanduhr");
+    render(document.getElementById("canvas3"), "qualle");
+  </script>
 
 
 
