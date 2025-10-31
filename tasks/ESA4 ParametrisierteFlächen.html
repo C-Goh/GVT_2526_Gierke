@@ -10,80 +10,75 @@
   Author: Nina Gierke
   -->
 
-  <style>
-    body {
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #262630;
+    color: #ffffff;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
 
-      font-family: Arial, sans-serif;
-      background: #262630;
-      color: #ffffff;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
 
-    canvas {
-      display: block;
-      width: 550px;
-      ;
-      height: 550px;
-      ;
-      background: #ffffff;
-    }
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+  }
 
-    h1 {
-      text-align: center;
-      color: #ffffff;
-      margin-bottom: 60px;
-    }
+  #task {
+    max-width: 600px;
+    margin-bottom: 40px;
+  }
 
-    #content {
-      display: flex;
-      gap: 80px;
-    }
+  #panelCanvas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px; /* Abstand zwischen den Canvases */
+    width: 100%;
+  }
 
-    #task {
-      width: 40%;
-      margin-left: 100px;
-    }
-  </style>
+  canvas {
+    width: 550px;
+    height: 550px;
+    background: #ffffff;
+    display: block;
+  }
+</style>
 </head>
 
 <body>
   <h1>ESA 4 - Parametrisierte Flächen</h1>
-  <div id="content">
 
-    <div id="task">
-      <h3>Aufgabenstellung</h3>
-      <p>
-        1 - Erzeugen Sie zwei neue parametrisierte Flächen (die nicht im Modul vorkommen)
-        zunächst mit Linien, siehe Material (dort gibt es viele Formeln, die Sie verwenden können).
+  <div id="task">
+    <h3>Aufgabenstellung</h3>
+    <p>
+      1 - Erzeugen Sie zwei neue parametrisierte Flächen (die nicht im Modul vorkommen)
+      zunächst mit Linien, siehe Material (dort gibt es viele Formeln, die Sie verwenden können).
+      <br><br>
+      2 - Füllen Sie dann die Flächen und kolorieren Sie sie passend zur jeweiligen Flächenform,
+      z. B. mit Farbverläufen. Die Linien sollen noch sichtbar sein, oder es besteht die Möglichkeit,
+      zwischen Linien und Füllung umzuschalten.
+      <br><br>
+      3 - Kreieren Sie auch eine eigene Parametrisierung für eine Fläche und kolorieren Sie diese.
+      Dazu sollen Sie sich eine neue Formel ausdenken [...]
+    </p>
 
-        2 - Füllen Sie dann die Flächen und kolorieren Sie sie passend zur jeweiligen Flächenform,
-        z. B. mit Farbverläufen. Die Linien sollen noch sichtbar sein, oder es besteht die Möglichkeit,
-        zwischen Linien und Füllung umzuschalten.
-
-        3 - Kreieren Sie auch eine eigene Parametrisierung für eine Fläche und kolorieren Sie diese.
-        Dazu sollen Sie sich eine neue Formel ausdenken, diese können Sie natürlich auf der Basis
-        der vorhandenen Formeln aufbauen (aus dem Modul oder aus dem Material).
-        Versuchen Sie Terme zu mischen und schauen Sie, ob das passiert, was Sie erwarten.
-        Alternativ suchen Sie sich eine Form und versuchen Sie diese zu erzeugen,
-        vielleicht „eine Qualle“ oder Ihre Lampe (dieses Vorgehen ist meist schwieriger).
-      </p>
-      <p>Als Vorlage wurde das Kursmaterial verwendet und anschließend angepasst.</p>
-
-      <p> Author: Nina Gierke</p>
-    </div>
-
-    <div>
-      <canvas id="canvas" width="800" height="800"></canvas>
-    </div>
-
+    <p>Als Vorlage wurde das Kursmaterial verwendet und anschließend angepasst.</p>
+    <p>Author: Nina Gierke</p>
   </div>
+
+  <div id="panelCanvas">
+    <canvas id="canvas" width="800" height="800"></canvas>
+    <canvas id="canvas2" width="800" height="800"></canvas>
+    <canvas id="canvas3" width="800" height="800"></canvas>
+  </div>
+
 
 
   <script>
