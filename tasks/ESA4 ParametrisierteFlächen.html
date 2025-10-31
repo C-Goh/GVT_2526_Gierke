@@ -37,10 +37,12 @@
 
   #panelCanvas {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: row; /* Nebeneinander statt untereinander */
+    align-items: flex-start;
+    justify-content: center;
     gap: 30px; /* Abstand zwischen den Canvases */
     width: 100%;
+    flex-wrap: wrap; /* Falls Bildschirm zu klein ist, umbrechen */
   }
 
   canvas {
@@ -81,128 +83,196 @@
 
 
 
-  <script>
-    // Get the WebGL context.
-    var canvas = document.getElementById('canvas');
-    var gl = canvas.getContext('experimental-webgl');
+<script>
+function render(canvas, mode) {
 
-    // Pipeline setup.
-    gl.clearColor(.95, .95, .95, 1);
-    // Backface culling.
-    gl.frontFace(gl.CCW);
-    gl.enable(gl.CULL_FACE);
-    gl.cullFace(gl.BACK);
+  let gl = canvas.getContext("experimental-webgl");
+  gl.clearColor(1,1,1,1);
+  gl.enable(gl.DEPTH_TEST);
 
-    // Compile vertex shader. 
-    var vsSource = '' +
-      'attribute vec3 pos;' +
-      'attribute vec4 col;' +
-      'varying vec4 color;' +
-      'void main(){' + 'color = col;' +
-      'gl_Position = vec4(pos, 1);' +
-      '}';
-    var vs = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vs, vsSource);
-    gl.compileShader(vs);
-
-    // Compile fragment shader.
-    fsSouce = 'precision mediump float;' +
-      'varying vec4 color;' +
-      'void main() {' +
-      'gl_FragColor = color;' +
-      '}';
-    var fs = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fs, fsSouce);
-    gl.compileShader(fs);
-
-    // Link shader together into a program.
-    var prog = gl.createProgram();
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.bindAttribLocation(prog, 0, "pos");
-    gl.linkProgram(prog);
-    gl.useProgram(prog);
-
-    // Vertex data.
-    // Positions, index data.
-    var vertices, indices;
-    // Fill the data arrays.
-    createVertexData();
-
-    // Setup position vertex buffer object.
-    var vboPos = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vboPos);
-    gl.bufferData(gl.ARRAY_BUFFER,
-      vertices, gl.STATIC_DRAW);
-    // Bind vertex buffer to attribute variable.
-    var posAttrib = gl.getAttribLocation(prog, 'pos');
-    gl.vertexAttribPointer(posAttrib, 3,
-      gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(posAttrib);
-
-    // Setup constant color.
-    var colAttrib = gl.getAttribLocation(prog, 'col');
-    gl.vertexAttrib4f(colAttrib, 0, 0, 1, 1);
-
-    // Setup index buffer object.
-    var ibo = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
-      indices, gl.STATIC_DRAW);
-    ibo.numberOfElements = indices.length;
-
-    // Clear framebuffer and render primitives.
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawElements(gl.LINE_STRIP,
-      ibo.numberOfElements, gl.UNSIGNED_SHORT, 0);
-
-    function createVertexData() {
-    var n = 64; // Winkelunterteilung
-    var m = 30; // Höhenunterteilung
-    var Rbase = 0.8; // Maximaler Radius (oben/unten)
-    var H = 1.6;     // Höhe
-    var k = 1.8;     // Einschnürung (0 = Zylinder, 1 = stark eingeschnürt)
-
-    vertices = new Float32Array(3 * (n + 1) * (m + 1));
-    indices  = new Uint16Array(2 * 2 * n * m);
-
-    var dt = 2 * Math.PI / n;
-    var dy = H / m;
-    var iIndex = 0;
-
-    for (var i = 0, t = 0; i <= n; i++, t += dt) {
-        for (var j = 0; j <= m; j++) {
-            var iVertex = i * (m + 1) + j;
-            var y = -H / 2 + j * dy;
-
-            // normierte Höhe [-1, +1]
-            var ny = (2 * y) / H;
-
-            // Sanduhr: in der Mitte schmal, oben/unten breit
-            var R = Rbase * (1 - k * (1 - ny * ny));
-
-            var x = R * Math.cos(t);
-            var z = R * Math.sin(t);
-
-            vertices[iVertex * 3]     = x;
-            vertices[iVertex * 3 + 1] = y;
-            vertices[iVertex * 3 + 2] = z;
-
-            // Linien
-            if (j > 0) {
-                indices[iIndex++] = iVertex - 1;
-                indices[iIndex++] = iVertex;
-            }
-            if (i > 0) {
-                indices[iIndex++] = iVertex - (m + 1);
-                indices[iIndex++] = iVertex;
-            }
-        }
+  /* Shader */
+  const vsSource = `
+    attribute vec3 pos;
+    attribute vec4 col;
+    varying vec4 vColor;
+    void main(){
+      vColor = col;
+      gl_Position = vec4(pos, 1.0);
     }
+  `;
+  const fsSource = `
+    precision mediump float;
+    varying vec4 vColor;
+    void main() {
+      gl_FragColor = vColor;
+    }
+  `;
+
+  function compile(type, src){
+    let s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  let prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  let vertices, colors, lineIndices, fillIndices;
+
+  if(mode==="zylinder") createZylinder();
+  if(mode==="sanduhr")  createSanduhr();
+  if(mode==="qualle")   createQualle();
+
+  /* Position buffer */
+  let vboPos = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vboPos);
+  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+  let aPos = gl.getAttribLocation(prog,"pos");
+  gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,0,0);
+  gl.enableVertexAttribArray(aPos);
+
+  /* Color buffer */
+  let vboCol = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vboCol);
+  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+  let aCol = gl.getAttribLocation(prog,"col");
+  gl.vertexAttribPointer(aCol,4,gl.FLOAT,false,0,0);
+  gl.enableVertexAttribArray(aCol);
+
+  /* Fill (triangles) */
+  let iboFill = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboFill);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, fillIndices, gl.STATIC_DRAW);
+
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.drawElements(gl.TRIANGLES, fillIndices.length, gl.UNSIGNED_SHORT, 0);
+
+  /* Line overlay = Schwarz */
+  let iboLine = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboLine);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, lineIndices, gl.STATIC_DRAW);
+
+  /* Farbe für Linien überschreiben */
+  gl.disableVertexAttribArray(aCol);       // keine Farb-Attribute mehr lesen
+  gl.vertexAttrib4f(aCol, 0, 0, 0, 1);     // Schwarz setzen (R,G,B,A)
+
+  /* Linien zeichnen */
+  gl.lineWidth(1.0);
+  gl.drawElements(gl.LINES, lineIndices.length, gl.UNSIGNED_SHORT, 0);
+
+  /* Farb-Attribute wieder aktivieren für nächste Figur */
+  gl.enableVertexAttribArray(aCol);
+
+
+  /* -------- SHAPE FUNCTIONS -------- */
+
+  function setup(n,m){
+    vertices = new Float32Array(3*(n+1)*(m+1));
+    colors   = new Float32Array(4*(n+1)*(m+1));
+    lineIndices = [];
+    fillIndices = [];
+
+    return {n,m};
+  }
+
+  function connectGrid(n,m){
+    // Linien und Dreiecke erzeugen
+    for(let i=0;i<n;i++){
+      for(let j=0;j<m;j++){
+        let a=i*(m+1)+j;
+        let b=a+1;
+        let c=(i+1)*(m+1)+j;
+        let d=c+1;
+
+        // Linien
+        lineIndices.push(a,b, a,c);
+
+        // Dreiecke (Flächenfüllung)
+        fillIndices.push(a,b,c,  b,d,c);
+      }
+    }
+    lineIndices = new Uint16Array(lineIndices);
+    fillIndices = new Uint16Array(fillIndices);
+  }
+
+  function colorByHeight(v,j,m){
+    let h=j/m;
+    colors[4*v]   = 0.2*(1-h);
+    colors[4*v+1] = 0.5+0.5*h;
+    colors[4*v+2] = 1;
+    colors[4*v+3] = 1;
+  }
+
+  /* --- Sanduhr --- */
+  function createSanduhr(){
+    let n=64, m=40;
+    setup(n,m);
+    let R0=0.8, H=1.6, k=1.8;
+    let dt=2*Math.PI/n, dy=H/m;
+
+    for(let i=0,t=0;i<=n;i++,t+=dt)
+    for(let j=0;j<=m;j++){
+      let v=i*(m+1)+j;
+      let y=-H/2+j*dy;
+      let ny=(2*y)/H;
+      let R=R0*(1-k*(1-ny*ny));
+      vertices[3*v]=R*Math.cos(t);
+      vertices[3*v+1]=y;
+      vertices[3*v+2]=R*Math.sin(t);
+      colorByHeight(v,j,m);
+    }
+    connectGrid(n,m);
+  }
+
+  /* --- Zylinder --- */
+  function createZylinder(){
+    let n=64, m=40;
+    setup(n,m);
+    let R=0.8, H=1.6;
+    let dt=2*Math.PI/n, dy=H/m;
+
+    for(let i=0,t=0;i<=n;i++,t+=dt)
+    for(let j=0;j<=m;j++){
+      let v=i*(m+1)+j;
+      let y=-H/2+j*dy;
+      vertices[3*v]=R*Math.cos(t);
+      vertices[3*v+1]=y;
+      vertices[3*v+2]=R*Math.sin(t);
+      colorByHeight(v,j,m);
+    }
+    connectGrid(n,m);
+  }
+
+  /* --- eigene Fläche: Qualle/Vase --- */
+  function createQualle(){
+    let n=64, m=60;
+    setup(n,m);
+    let R=0.6, H=1.8, a=0.25, k=6;
+    let dt=2*Math.PI/n, dy=H/m;
+
+    for(let i=0,t=0;i<=n;i++,t+=dt)
+    for(let j=0;j<=m;j++){
+      let v=i*(m+1)+j;
+      let y=-H/2+j*dy;
+      let r=R + a*Math.sin(k*y*2.0);
+      vertices[3*v]=r*Math.cos(t);
+      vertices[3*v+1]=y;
+      vertices[3*v+2]=r*Math.sin(t);
+      colorByHeight(v,j,m);
+    }
+    connectGrid(n,m);
+  }
 }
 
+/* render canvases */
+render(document.getElementById("canvas"), "zylinder");
+render(document.getElementById("canvas2"), "sanduhr");
+render(document.getElementById("canvas3"), "qualle");
+</script>
 
-  </script>
 
 
 </body>
