@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>ESA 3 - Farbig gefüllte 2D Geometrie</title>
+
+  <!-- Dokumentation
+
+  Author: Nina Gierke
+  -->
+
+  <style>
+    body {
+
+      font-family: Arial, sans-serif;
+      background: #262630;
+      color: #ffffff;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    canvas {display:block; width: 550px;; height: 550px;; background:#ffffff;}
+
+    h1 {
+      text-align: center;
+      color: #ffffff;
+      margin-bottom: 60px;
+    }
+
+    #content {
+      display: flex;
+      gap: 80px;
+    }
+    
+    #task {
+      width: 40%;
+      margin-left: 100px;
+    }
+
+  </style>
+</head>
+
+<body>
+  <h1>ESA 3 - Farbig gefüllte 2D Geometrie</h1>
+  <div id="content">
+
+    <div id="task">
+      <h3>Aufgabenstellung</h3>
+      <p>
+          Kolorieren Sie eine eigene 2D-Geometrie, indem Sie nun Dreiecke (keine Linien) erzeugen 
+          (Sie können auf der Lösung der vorherigen Aufgabe aufbauen). 
+          Sie können dabei einfarbige Flächen oder auch Farbverläufe einsetzen.
+      </p>
+      <p>Die Grafik wurde eigenständig entwickelt.</p>
+
+      <p> Author: Nina Gierke</p>
+    </div>
+
+    <div>
+        <canvas id="canvas" width="800" height="800"></canvas>
+    </div>
+
+  </div>
+
+
+<script>
+
+  const canvas = document.getElementById('canvas');
+  const gl = canvas.getContext('webgl');
+  if (!gl) alert('WebGL wird nicht unterstützt!');
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+
+  // Shader
+  const vs = `
+    attribute vec2 a_pos;
+    attribute vec4 a_color;
+    varying vec4 v_color;
+
+    void main() {
+      gl_Position = vec4(a_pos, 0.0, 1.0);
+      v_color = a_color;
+    }
+  `;
+
+  const fs = `
+    precision mediump float;
+    varying vec4 v_color;
+
+    void main() {
+      gl_FragColor = v_color;
+    }
+  `;
+
+  function compile(src, type) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error('Shader Fehler:', gl.getShaderInfoLog(s));
+    }
+    return s;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(vs, gl.VERTEX_SHADER));
+  gl.attachShader(prog, compile(fs, gl.FRAGMENT_SHADER));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const aPos = gl.getAttribLocation(prog, "a_pos");
+  const aColor = gl.getAttribLocation(prog, "a_color");
+
+  gl.clearColor(0.0, 0.0, 0.3, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // -----------------------------------------------------------
+  // Erweiterte drawShape()-Funktion (unterstützt Farbverlauf oder Einzelfarbe)
+  function drawShape(vertices, color, mode = gl.TRIANGLES) {
+    // Positionen
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(aPos);
+
+    // Farben
+    const colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+
+    let colorArray;
+    if (color.length === 4) {
+      // eine Farbe → für jeden Vertex wiederholen
+      const count = vertices.length / 2;
+      colorArray = [];
+      for (let i = 0; i < count; i++) colorArray.push(...color);
+    } else {
+      // mehrere Farben → direkt übernehmen
+      colorArray = color;
+    }
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorArray), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(aColor, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(aColor);
+
+    gl.drawArrays(mode, 0, vertices.length / 2);
+  }
+
+
+  // -----------------------------------------------------------
+  // Farbflächen
+
+  // Linke Gesichtsseite
+  drawShape([
+    -0.1, 0.4, -0.5, 0.8, -0.3, 0.2, -0.1, 0.1, 0.1, 0.4
+  ], [1.0, 0.5, 0.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Rechte Gesichtsseite
+  drawShape([
+    0.1, 0.4, -0.1, 0.1, 0.1, 0.1, 0.3, 0.2, 0.5, 0.8
+  ], [1.0, 0.5, 0.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Mittlerer Bereich (Schnauze)
+  drawShape([
+    0.1, 0.0, 0.1, 0.1, -0.1, 0.1, -0.1, 0.0, -0.1, -0.5, 0.1, -0.5
+  ], [1.0, 0.5, 0.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Wange links
+  drawShape([
+    -0.3, 0.2, -0.5, 0.3, -0.8, 0.1, -0.6, -0.1
+  ], [1.0, 0.5, 0.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Wange rechts
+  drawShape([
+    0.3, 0.2, 0.5, 0.3, 0.8, 0.1, 0.6, -0.1
+  ], [1.0, 0.5, 0.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Nase (braun)
+  drawShape([
+    -0.1, -0.5, 0.1, -0.5, 0.0, -0.6
+  ], [0.4, 0.2, 0.0, 1.0], gl.TRIANGLES);
+
+// Schnauze mit Farbverlauf
+drawShape([
+  0.0, -0.6,
+  -0.1, -0.8, 
+  0.1, -0.8 
+], [
+  0.9, 0.9, 0.9, 1.0,
+  0.6, 0.6, 0.6, 1.0,
+  0.6, 0.6, 0.6, 1.0 
+], gl.TRIANGLES);
+
+  // Schnauze rechts
+  drawShape([
+    -0.1, -0.8, 0.0, -0.6, -0.1, -0.5, -0.1, -0.3, -0.3, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Schnauze links
+  drawShape([
+    0.1, -0.8, 0.0, -0.6, 0.1, -0.5, 0.1, -0.3, 0.3, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Augenhöhle rechts
+  drawShape([
+    0.1, 0.1, 0.3, 0.2, 0.4, 0.1, 0.2, 0.1, 0.1, 0.0
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Augenhöhle links
+  drawShape([
+    -0.1, 0.1, -0.3, 0.2, -0.4, 0.1, -0.2, 0.1, -0.1, 0.0
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Unterauge links
+  drawShape([
+    -0.1, 0.0, -0.1, -0.3, -0.4, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLES);
+
+  // Unterauge rechts
+  drawShape([
+    0.1, 0.0, 0.1, -0.3, 0.4, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLES);
+
+  // Außenwange links
+  drawShape([
+    -0.4, -0.3, -0.2, -0.1, -0.3, -0.1, -0.4, 0.0, -0.4, 0.0, -0.4, 0.1, -0.6, -0.1, -0.6, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+  // Außenwange rechts
+  drawShape([
+    0.4, -0.3, 0.2, -0.1, 0.3, -0.1, 0.4, 0.0, 0.4, 0.0, 0.4, 0.1, 0.6, -0.1, 0.6, -0.3
+  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+
+ // Auge links mit Verlauf:
+  drawShape([
+    -0.2, 0.1, -0.1, 0.0, -0.2, -0.1, -0.3, -0.1, -0.4, 0.0, -0.4, 0.1
+  ], [
+    0.6, 0.95, 1.0, 1.0,  // hell oben
+    0.5, 0.9, 1.0, 1.0,
+    0.3, 0.7, 0.9, 1.0,   // dunkler unten
+    0.3, 0.7, 0.9, 1.0,
+    0.5, 0.9, 1.0, 1.0,
+    0.6, 0.95, 1.0, 1.0
+  ], gl.TRIANGLE_FAN);
+
+  //Auge rechts mit Verlauf:
+  drawShape([
+    0.2, 0.1, 0.1, 0.0, 0.2, -0.1, 0.3, -0.1, 0.4, 0.0, 0.4, 0.1
+  ], [
+    0.6, 0.95, 1.0, 1.0,
+    0.5, 0.9, 1.0, 1.0,
+    0.3, 0.7, 0.9, 1.0,
+    0.3, 0.7, 0.9, 1.0,
+    0.5, 0.9, 1.0, 1.0,
+    0.6, 0.95, 1.0, 1.0
+  ], gl.TRIANGLE_FAN);
+
+  // Ohr links
+  drawShape([
+    -0.5, 0.8, -0.3, 0.2, -0.5, 0.3
+  ], [0.9, 0.4, 0.6, 1.0], gl.TRIANGLES);
+
+  // Ohr rechts
+  drawShape([
+    0.5, 0.8, 0.3, 0.2, 0.5, 0.3
+  ], [0.9, 0.4, 0.6, 1.0], gl.TRIANGLES);
+
+</script>
+
+
+</body>
+</html>
