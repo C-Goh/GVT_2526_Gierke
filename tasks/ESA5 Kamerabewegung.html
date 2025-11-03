@@ -1,290 +1,300 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Rekursive Kugel + Szene — Three.js</title>
+  <meta charset="UTF-8">
+  <title>ESA 5 - Kamerabewegung</title>
+
+  <!-- Dokumentation
+
+  Author: Nina Gierke
+  -->
+
   <style>
-    html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
-    #canvas-container{width:100%;height:100%;display:block;position:relative;background:#111}
-    #ui{position:absolute;left:10px;top:10px;color:#fff;z-index:10}
-    button{margin:2px;padding:6px 10px;border-radius:6px;border:0;background:#2d2d2d;color:#fff;cursor:pointer}
-    .lbl{display:inline-block;padding:6px;color:#ddd}
-    #info{position:absolute;right:10px;top:10px;color:#ddd;background:rgba(0,0,0,0.25);padding:8px;border-radius:6px}
+    body {
+      font-family: Arial, sans-serif;
+      background: #262630;
+      color: #ffffff;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    #task {
+      max-width: 600px;
+      margin-bottom: 40px;
+    }
+
+    #panelCanvas {
+      display: flex;
+      flex-direction: row;
+      /* Nebeneinander statt untereinander */
+      align-items: flex-start;
+      justify-content: center;
+      gap: 30px;
+      /* Abstand zwischen den Canvases */
+      width: 100%;
+      flex-wrap: wrap;
+      /* Falls Bildschirm zu klein ist, umbrechen */
+    }
+
+    canvas {
+      width: 550px;
+      height: 550px;
+      background: #ffffff;
+      display: block;
+    }
   </style>
 </head>
+
 <body>
-<div id="canvas-container"></div>
-<div id="ui">
-  <div style="margin-bottom:8px">
-    <button id="depth-minus">−</button>
-    <span class="lbl">Rekursion: <span id="depth-val">0</span></span>
-    <button id="depth-plus">+</button>
+  <h1>ESA 5 - Kamerabewegung</h1>
+
+  <div id="task">
+    <h3>Aufgabenstellung</h3>
+    <p>
+      1 - Erzeugen Sie zwei neue parametrisierte Flächen (die nicht im Modul vorkommen)
+      zunächst mit Linien, siehe Material (dort gibt es viele Formeln, die Sie verwenden können).
+      <br><br>
+      2 - Füllen Sie dann die Flächen und kolorieren Sie sie passend zur jeweiligen Flächenform,
+      z. B. mit Farbverläufen. Die Linien sollen noch sichtbar sein, oder es besteht die Möglichkeit,
+      zwischen Linien und Füllung umzuschalten.
+      <br><br>
+      3 - Kreieren Sie auch eine eigene Parametrisierung für eine Fläche und kolorieren Sie diese.
+      Dazu sollen Sie sich eine neue Formel ausdenken [...]
+    </p>
+
+    <p>Als Inspiration wurde die Seite http://www.3d-meier.de/tut3/Seite0.html verwendet.</p>
+    <p>Author: Nina Gierke</p>
   </div>
-  <div style="margin-bottom:8px">
-    <button id="toggle-wire">Wireframe: Aus</button>
-    <button id="toggle-fill">Füllung: Ein</button>
+
+  <div id="panelCanvas">
+    <canvas id="canvas" width="1200" height="1200"></canvas>
+
   </div>
-  <div>
-    <span class="lbl">Kamera: ← → kreisen</span><br>
-    <span class="lbl">Radius: N / Shift+N</span>
-  </div>
-</div>
-<div id="info">
-  <div><strong>Szene</strong>: zwei Grundkörper (Würfel + Torus) + rekursive Kugel</div>
-  <div style="margin-top:6px">Interaktiv: Maus (Orbit), Tastatur: Pfeile &nbsp;N / ⇧N</div>
-</div>
 
-<script type="module">
-// Single-file Three.js scene
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
-const container = document.getElementById('canvas-container');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b0b0f);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
-let camAngle = 0; // radians, around Y axis
-let camRadius = 12;
-const target = new THREE.Vector3(0,0,0);
-camera.position.set(Math.sin(camAngle)*camRadius, 3, Math.cos(camAngle)*camRadius);
-camera.up.set(0,1,0);
-camera.lookAt(target);
+  <script>
+    function render(canvas, mode) {
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth, window.innerHeight);
-container.appendChild(renderer.domElement);
+      let gl = canvas.getContext("experimental-webgl");
+      gl.clearColor(1, 1, 1, 1);
+      gl.enable(gl.DEPTH_TEST);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.copy(target);
-controls.enableKeys = false; // we handle keyboard ourselves
+      /* Shader */
+      const vsSource = `
+      attribute vec3 pos;
+      attribute vec4 col;
+      varying vec4 vColor;
+      void main(){
+        vColor = col;
+        gl_Position = vec4(pos, 1.0);
+      }
+    `;
+      const fsSource = `
+      precision mediump float;
+      varying vec4 vColor;
+      void main() {
+        gl_FragColor = vColor;
+      }
+    `;
 
-// Lights
-const hemi = new THREE.HemisphereLight(0x8888ff, 0x444422, 0.6);
-scene.add(hemi);
-const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-dir.position.set(5,10,7);
-scene.add(dir);
+      function compile(type, src) {
+        let s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return s;
+      }
+      let prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
 
-// --- Teil 1: mindestens zwei Grundkörper ---
-// 1) Würfel
-const cubeGeom = new THREE.BoxGeometry(2,2,2);
-const cubeMat = new THREE.MeshStandardMaterial({color:0x4f83ff, metalness:0.3, roughness:0.6});
-const cube = new THREE.Mesh(cubeGeom, cubeMat);
-cube.position.set(-4,1,0);
-scene.add(cube);
+      let vertices, colors, lineIndices, fillIndices;
 
-// 2) Torus
-const torusGeom = new THREE.TorusGeometry(1.2,0.4,24,60);
-const torusMat = new THREE.MeshStandardMaterial({color:0xff8a5b, metalness:0.2, roughness:0.5});
-const torus = new THREE.Mesh(torusGeom, torusMat);
-torus.position.set(4,1,0);
-torus.rotation.x = Math.PI/4;
-scene.add(torus);
+      if (mode === "pseudosphere") createPseudosphere();
+      if (mode === "sanduhr") createSanduhr();
+      if (mode === "qualle") createQualle();
 
-// ground plane
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(60,60), new THREE.MeshStandardMaterial({color:0x222222, roughness:1}));
-ground.rotation.x = -Math.PI/2; ground.position.y = 0;
-scene.add(ground);
+      let vboPos = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vboPos);
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+      let aPos = gl.getAttribLocation(prog, "pos");
+      gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(aPos);
 
-// --- Teil 2: rekursive Kugel aus Oktaeder ---
-let recursionDepth = 0;
-const maxDepth = 6; // safety
-let sphereGroup = new THREE.Group();
-scene.add(sphereGroup);
+      let vboCol = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vboCol);
+      gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+      let aCol = gl.getAttribLocation(prog, "col");
+      gl.vertexAttribPointer(aCol, 4, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(aCol);
 
-function makeOctahedron(){
-  // vertices of unit octahedron
-  const v = [
-    [1,0,0],[ -1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]
-  ];
-  // faces - triangles (index into v)
-  const f = [
-    [0,2,4],[2,1,4],[1,3,4],[3,0,4],
-    [2,0,5],[1,2,5],[3,1,5],[0,3,5]
-  ];
-  // convert to flat arrays
-  const vertices = [];
-  for(const vert of v) vertices.push(...vert);
-  const indices = [];
-  for(const tri of f) indices.push(...tri);
-  return {vertices, indices};
+      let iboFill = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboFill);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, fillIndices, gl.STATIC_DRAW);
+
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.drawElements(gl.TRIANGLES, fillIndices.length, gl.UNSIGNED_SHORT, 0);
+
+      let iboLine = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboLine);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, lineIndices, gl.STATIC_DRAW);
+
+      gl.disableVertexAttribArray(aCol);
+      gl.vertexAttrib4f(aCol, 0, 0, 0, 1);
+
+      gl.lineWidth(1.0);
+      gl.drawElements(gl.LINES, lineIndices.length, gl.UNSIGNED_SHORT, 0);
+
+      gl.enableVertexAttribArray(aCol);
+
+
+
+
+      function setup(n, m) {
+        vertices = new Float32Array(3 * (n + 1) * (m + 1));
+        colors = new Float32Array(4 * (n + 1) * (m + 1));
+        lineIndices = [];
+        fillIndices = [];
+
+        return { n, m };
+      }
+
+      function connectGrid(n, m) {
+
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < m; j++) {
+            let a = i * (m + 1) + j;
+            let b = a + 1;
+            let c = (i + 1) * (m + 1) + j;
+            let d = c + 1;
+
+            // Linien
+            lineIndices.push(a, b, a, c);
+
+            // Dreiecke
+            fillIndices.push(a, b, c, b, d, c);
+          }
+        }
+        lineIndices = new Uint16Array(lineIndices);
+        fillIndices = new Uint16Array(fillIndices);
+      }
+
+      function colorByHeight(v, j, m) {
+        let h = j / m;
+        colors[4 * v] = 0.2 * (1 - h);
+        colors[4 * v + 1] = 0.5 + 0.5 * h;
+        colors[4 * v + 2] = 1;
+        colors[4 * v + 3] = 1;
+      }
+
+function createPseudosphere() {
+  let treeCount = 3;
+  let n = 32, m = 40;
+  let trunkHeight = 0.3;
+  let coneHeight = 0.8;
+  let totalHeight = trunkHeight + coneHeight;
+
+  let trunkRadius = 0.08;
+  let coneBaseRadius = 0.35;
+
+  let xOffsets = [-0.6, 0, 0.6]; // Baumpositionen
+
+  // Gesamte Vertexmenge (alle Bäume)
+  setup(n * treeCount, m);
+
+  let vertexIndex = 0;
+
+  function addTree(xOffset) {
+    let baseIndex = vertexIndex;
+
+    for (let i = 0; i <= n; i++) {
+      let u = (i / n) * Math.PI * 2;
+      for (let j = 0; j <= m; j++) {
+        let v = j / m;
+
+        let x, y, z;
+
+        if (v < trunkHeight / totalHeight) {
+          let h = v / (trunkHeight / totalHeight);
+          let r = trunkRadius;
+
+          x = r * Math.cos(u);
+          y = h * trunkHeight - 0.5;
+          z = r * Math.sin(u);
+
+          colors[4 * vertexIndex + 0] = 0.4;
+          colors[4 * vertexIndex + 1] = 0.25;
+          colors[4 * vertexIndex + 2] = 0.1;
+          colors[4 * vertexIndex + 3] = 1;
+
+        } else {
+          let h = (v - trunkHeight / totalHeight) / (coneHeight / totalHeight);
+          let r = coneBaseRadius * (1 - h);
+
+          x = r * Math.cos(u);
+          y = trunkHeight + h * coneHeight - 0.5;
+          z = r * Math.sin(u);
+
+          colors[4 * vertexIndex + 0] = 0.1 + 0.4 * Math.random();
+          colors[4 * vertexIndex + 1] = 0.6 + 0.3 * Math.random();
+          colors[4 * vertexIndex + 2] = 0.1;
+          colors[4 * vertexIndex + 3] = 1;
+        }
+
+        vertices[3 * vertexIndex + 0] = x + xOffset;
+        vertices[3 * vertexIndex + 1] = y;
+        vertices[3 * vertexIndex + 2] = z;
+
+        vertexIndex++;
+      }
+    }
+
+    // lokales connect grid für diesen Baum
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < m; j++) {
+        let a = baseIndex + i * (m + 1) + j;
+        let b = a + 1;
+        let c = baseIndex + (i + 1) * (m + 1) + j;
+        let d = c + 1;
+
+        lineIndices.push(a, b, a, c);
+        fillIndices.push(a, b, c, b, d, c);
+      }
+    }
+  }
+
+  // Drei Bäume hinzufügen
+  addTree(xOffsets[1]);
+  addTree(xOffsets[0.5]);
+
+  lineIndices = new Uint16Array(lineIndices);
+  fillIndices = new Uint16Array(fillIndices);
 }
 
-function subdivideToSphere(vertices, indices, depth){
-  // vertices: flat array [x,y,z,...]
-  // indices: flat array of triplets
-  if(depth===0) return {vertices, indices};
 
-  let vertList = vertices.slice();
-  const faces = [];
-  for(let i=0;i<indices.length;i+=3){
-    faces.push([indices[i], indices[i+1], indices[i+2]]);
-  }
+    }
 
-  // map to find midpoints (avoid duplicates)
-  const midpointMap = new Map();
-  function midpoint(a,b){
-    const key = a<b ? `${a}_${b}` : `${b}_${a}`;
-    if(midpointMap.has(key)) return midpointMap.get(key);
-    const ax = vertList[3*a], ay = vertList[3*a+1], az = vertList[3*a+2];
-    const bx = vertList[3*b], by = vertList[3*b+1], bz = vertList[3*b+2];
-    const mx = (ax+bx)/2, my = (ay+by)/2, mz = (az+bz)/2;
-    // normalize to unit sphere
-    const len = Math.hypot(mx,my,mz) || 1;
-    const nx = mx/len, ny = my/len, nz = mz/len;
-    const idx = vertList.length/3;
-    vertList.push(nx,ny,nz);
-    midpointMap.set(key, idx);
-    return idx;
-  }
+    //Render
+    render(document.getElementById("canvas"), "pseudosphere");
 
-  let newFaces = [];
-  for(const tri of faces){
-    const [a,b,c] = tri;
-    const ab = midpoint(a,b);
-    const bc = midpoint(b,c);
-    const ca = midpoint(c,a);
-    newFaces.push([a,ab,ca]);
-    newFaces.push([ab,b,bc]);
-    newFaces.push([ca,bc,c]);
-    newFaces.push([ab,bc,ca]);
-  }
+  </script>
 
-  const newIndices = [];
-  for(const t of newFaces) newIndices.push(...t);
 
-  return subdivideToSphere(vertList, newIndices, depth-1);
-}
 
-// Create colored mesh + edges
-let sphereMesh = null;
-let sphereEdges = null;
-let sphereRadius = 1.8;
-
-function buildRecursiveSphere(depth){
-  if(sphereMesh){
-    sphereGroup.remove(sphereMesh);
-    sphereMesh.geometry.dispose();
-    sphereMesh.material.dispose();
-    sphereMesh = null;
-  }
-  if(sphereEdges){
-    sphereGroup.remove(sphereEdges);
-    sphereEdges.geometry.dispose();
-    sphereEdges.material.dispose();
-    sphereEdges = null;
-  }
-
-  const base = makeOctahedron();
-  const res = subdivideToSphere(base.vertices, base.indices, depth);
-
-  const geom = new THREE.BufferGeometry();
-  const pos = new Float32Array(res.vertices);
-  geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  geom.setIndex(res.indices);
-  geom.computeVertexNormals();
-
-  // Per-face color: produce a color for each face and expand to vertex colors
-  const faceCount = res.indices.length/3;
-  const colors = new Float32Array(pos.length);
-  for(let fi=0; fi<faceCount; ++fi){
-    const c = new THREE.Color().setHSL((fi/Math.max(1,faceCount))*0.85, 0.6, 0.5);
-    const ia = res.indices[3*fi+0];
-    const ib = res.indices[3*fi+1];
-    const ic = res.indices[3*fi+2];
-    // assign same color to vertices of this face
-    colors[3*ia+0] = c.r; colors[3*ia+1] = c.g; colors[3*ia+2] = c.b;
-    colors[3*ib+0] = c.r; colors[3*ib+1] = c.g; colors[3*ib+2] = c.b;
-    colors[3*ic+0] = c.r; colors[3*ic+1] = c.g; colors[3*ic+2] = c.b;
-  }
-  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-  const mat = new THREE.MeshStandardMaterial({vertexColors:true, flatShading:false, metalness:0.2, roughness:0.6});
-  sphereMesh = new THREE.Mesh(geom, mat);
-  sphereMesh.scale.setScalar(sphereRadius);
-  sphereMesh.position.set(0, 1.5, 0);
-  sphereGroup.add(sphereMesh);
-
-  // edges
-  const edges = new THREE.EdgesGeometry(geom);
-  const lineMat = new THREE.LineBasicMaterial({linewidth:1});
-  sphereEdges = new THREE.LineSegments(edges, lineMat);
-  sphereEdges.scale.setScalar(sphereRadius);
-  sphereEdges.position.copy(sphereMesh.position);
-  sphereGroup.add(sphereEdges);
-}
-
-// initial build
-buildRecursiveSphere(recursionDepth);
-
-// UI wiring
-const depthVal = document.getElementById('depth-val');
-const btnPlus = document.getElementById('depth-plus');
-const btnMinus = document.getElementById('depth-minus');
-const toggleWire = document.getElementById('toggle-wire');
-const toggleFill = document.getElementById('toggle-fill');
-
-function updateDepth(d){
-  recursionDepth = Math.max(0, Math.min(maxDepth, d));
-  depthVal.textContent = recursionDepth;
-  buildRecursiveSphere(recursionDepth);
-}
-btnPlus.onclick = ()=> updateDepth(recursionDepth+1);
-btnMinus.onclick = ()=> updateDepth(recursionDepth-1);
-
-let wireOn = false; // show edges
-let fillOn = true;
-function updateWireUI(){
-  toggleWire.textContent = `Wireframe: ${wireOn? 'Ein':'Aus'}`;
-  toggleFill.textContent = `Füllung: ${fillOn? 'Ein':'Aus'}`;
-  if(sphereMesh) sphereMesh.visible = fillOn;
-  if(sphereEdges) sphereEdges.visible = wireOn;
-}
-
-toggleWire.onclick = ()=>{ wireOn = !wireOn; updateWireUI(); };
-toggleFill.onclick = ()=>{ fillOn = !fillOn; updateWireUI(); };
-updateWireUI();
-
-// Position sphereGroup nicely
-sphereGroup.position.set(0,0,0);
-
-// Keyboard camera control: Pfeil links/rechts -> camAngle change; N / Shift+N change radius
-window.addEventListener('keydown', (e)=>{
-  if(e.key === 'ArrowLeft'){
-    camAngle -= Math.PI/36; // 5 degrees
-    e.preventDefault();
-  } else if(e.key === 'ArrowRight'){
-    camAngle += Math.PI/36;
-    e.preventDefault();
-  } else if(e.key === 'n' || e.key === 'N'){
-    // increase or decrease radius
-    if(e.shiftKey){ camRadius = Math.max(3, camRadius - 0.5); }
-    else { camRadius = Math.min(60, camRadius + 0.5); }
-    e.preventDefault();
-  }
-});
-
-// animate
-function animate(){
-  requestAnimationFrame(animate);
-  // update camera position on circle around Y-axis (XZ-plane)
-  camera.position.set(Math.sin(camAngle)*camRadius, camera.position.y, Math.cos(camAngle)*camRadius);
-  // keep camera height stable (allow orbit controls to change it)
-  camera.lookAt(target);
-  controls.update();
-  renderer.render(scene, camera);
-}
-animate();
-
-// handle resize
-window.addEventListener('resize', ()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-</script>
 </body>
+
 </html>
