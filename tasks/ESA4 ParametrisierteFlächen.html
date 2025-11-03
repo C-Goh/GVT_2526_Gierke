@@ -125,11 +125,10 @@
 
       let vertices, colors, lineIndices, fillIndices;
 
-      if (mode === "zylinder") createZylinder();
+      if (mode === "pseudosphere") createPseudosphere();
       if (mode === "sanduhr") createSanduhr();
       if (mode === "qualle") createQualle();
 
-      /* Position buffer */
       let vboPos = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, vboPos);
       gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
@@ -137,7 +136,6 @@
       gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(aPos);
 
-      /* Color buffer */
       let vboCol = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, vboCol);
       gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
@@ -145,7 +143,6 @@
       gl.vertexAttribPointer(aCol, 4, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(aCol);
 
-      /* Fill (triangles) */
       let iboFill = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboFill);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, fillIndices, gl.STATIC_DRAW);
@@ -153,24 +150,20 @@
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.drawElements(gl.TRIANGLES, fillIndices.length, gl.UNSIGNED_SHORT, 0);
 
-      /* Line overlay = Schwarz */
       let iboLine = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboLine);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, lineIndices, gl.STATIC_DRAW);
 
-      /* Farbe für Linien überschreiben */
-      gl.disableVertexAttribArray(aCol);       // keine Farb-Attribute mehr lesen
-      gl.vertexAttrib4f(aCol, 0, 0, 0, 1);     // Schwarz setzen (R,G,B,A)
+      gl.disableVertexAttribArray(aCol);
+      gl.vertexAttrib4f(aCol, 0, 0, 0, 1);
 
-      /* Linien zeichnen */
       gl.lineWidth(1.0);
       gl.drawElements(gl.LINES, lineIndices.length, gl.UNSIGNED_SHORT, 0);
 
-      /* Farb-Attribute wieder aktivieren für nächste Figur */
       gl.enableVertexAttribArray(aCol);
 
 
-      /* -------- SHAPE FUNCTIONS -------- */
+
 
       function setup(n, m) {
         vertices = new Float32Array(3 * (n + 1) * (m + 1));
@@ -182,7 +175,7 @@
       }
 
       function connectGrid(n, m) {
-        // Linien und Dreiecke erzeugen
+
         for (let i = 0; i < n; i++) {
           for (let j = 0; j < m; j++) {
             let a = i * (m + 1) + j;
@@ -193,7 +186,7 @@
             // Linien
             lineIndices.push(a, b, a, c);
 
-            // Dreiecke (Flächenfüllung)
+            // Dreiecke
             fillIndices.push(a, b, c, b, d, c);
           }
         }
@@ -230,27 +223,45 @@
         connectGrid(n, m);
       }
 
-      // Zylinder
-      function createZylinder() {
-        let n = 64, m = 40;
+      // Pseudosphere
+      function createPseudosphere() {
+        let n = 32, m = 20;
         setup(n, m);
-        let R = 0.8, H = 1.6;
-        let dt = 2 * Math.PI / n, dy = H / m;
 
-        for (let i = 0, t = 0; i <= n; i++, t += dt)
+        let uMin = -Math.PI, uMax = Math.PI;
+        let vMin = 0.1, vMax = 3.05;
+        let du = (uMax - uMin) / n;
+        let dv = (vMax - vMin) / m;
+
+        let scale = 0.3; // 🔹 kleinerer Wert = kleinere Figur
+
+        for (let i = 0; i <= n; i++) {
+          let u = uMin + i * du;
           for (let j = 0; j <= m; j++) {
-            let v = i * (m + 1) + j;
-            let y = -H / 2 + j * dy;
-            vertices[3 * v] = R * Math.cos(t);
-            vertices[3 * v + 1] = y;
-            vertices[3 * v + 2] = R * Math.sin(t);
-            colorByHeight(v, j, m);
+            let v = vMin + j * dv;
+            let idx = i * (m + 1) + j;
+
+            // Parametergleichungen
+            let x = Math.cos(u) * Math.sin(v);
+            let y = Math.sin(u) * Math.sin(v);
+            let z = Math.cos(v) + Math.log(Math.tan(v / 2));
+
+            // 🔹 Skalierung anwenden
+            x *= scale;
+            y *= scale;
+            z *= scale;
+
+            vertices[3 * idx] = x;
+            vertices[3 * idx + 1] = z;
+            vertices[3 * idx + 2] = y;
+
+            colorByHeight(idx, j, m);
           }
+        }
         connectGrid(n, m);
       }
 
       // Qualle
-      /* --- eigene Fläche: Qualle/Vase --- */
       function createQualle() {
         let n = 64, m = 60;
         setup(n, m);
@@ -266,20 +277,20 @@
             vertices[3 * v + 1] = y;
             vertices[3 * v + 2] = r * Math.sin(t);
 
-            // Farbverlauf von Pink (unten) nach Lila (oben)
+            // Farbverlauf
             let h = j / m;
             let pink = [1.0, 0.4, 0.7];
             let lila = [0.6, 0.2, 0.8];
             let yellow = [1.0, 1.0, 0.2];
 
             if (i % 2 === 0) {
-              // jede zweite vertikale Reihe wird gelb
+              // jede zweite vertikale Reihe gelb
               colors[4 * v] = yellow[0];
               colors[4 * v + 1] = yellow[1];
               colors[4 * v + 2] = yellow[2];
               colors[4 * v + 3] = 1.0;
             } else {
-              // sonst Farbverlauf Pink → Lila
+              // sonst Farbverlauf
               colors[4 * v] = pink[0] * (1 - h) + lila[0] * h;
               colors[4 * v + 1] = pink[1] * (1 - h) + lila[1] * h;
               colors[4 * v + 2] = pink[2] * (1 - h) + lila[2] * h;
@@ -290,10 +301,11 @@
       }
     }
 
-
-    render(document.getElementById("canvas"), "zylinder");
+    //Render
+    render(document.getElementById("canvas"), "pseudosphere");
     render(document.getElementById("canvas2"), "sanduhr");
     render(document.getElementById("canvas3"), "qualle");
+
   </script>
 
 
