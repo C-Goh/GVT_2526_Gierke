@@ -1,280 +1,290 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>ESA 3 - Farbig gefüllte 2D Geometrie</title>
-
-  <!-- Dokumentation
-
-  Author: Nina Gierke
-  -->
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rekursive Kugel + Szene — Three.js</title>
   <style>
-    body {
-
-      font-family: Arial, sans-serif;
-      background: #262630;
-      color: #ffffff;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    canvas {display:block; width: 550px;; height: 550px;; background:#ffffff;}
-
-    h1 {
-      text-align: center;
-      color: #ffffff;
-      margin-bottom: 60px;
-    }
-
-    #content {
-      display: flex;
-      gap: 80px;
-    }
-    
-    #task {
-      width: 40%;
-      margin-left: 100px;
-    }
-
+    html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    #canvas-container{width:100%;height:100%;display:block;position:relative;background:#111}
+    #ui{position:absolute;left:10px;top:10px;color:#fff;z-index:10}
+    button{margin:2px;padding:6px 10px;border-radius:6px;border:0;background:#2d2d2d;color:#fff;cursor:pointer}
+    .lbl{display:inline-block;padding:6px;color:#ddd}
+    #info{position:absolute;right:10px;top:10px;color:#ddd;background:rgba(0,0,0,0.25);padding:8px;border-radius:6px}
   </style>
 </head>
-
 <body>
-  <h1>ESA 3 - Farbig gefüllte 2D Geometrie</h1>
-  <div id="content">
-
-    <div id="task">
-      <h3>Aufgabenstellung</h3>
-      <p>
-          Kolorieren Sie eine eigene 2D-Geometrie, indem Sie nun Dreiecke (keine Linien) erzeugen 
-          (Sie können auf der Lösung der vorherigen Aufgabe aufbauen). 
-          Sie können dabei einfarbige Flächen oder auch Farbverläufe einsetzen.
-      </p>
-      <p>Die Grafik wurde eigenständig entwickelt.</p>
-
-      <p> Author: Nina Gierke</p>
-    </div>
-
-    <div>
-        <canvas id="canvas" width="800" height="800"></canvas>
-    </div>
-
+<div id="canvas-container"></div>
+<div id="ui">
+  <div style="margin-bottom:8px">
+    <button id="depth-minus">−</button>
+    <span class="lbl">Rekursion: <span id="depth-val">0</span></span>
+    <button id="depth-plus">+</button>
   </div>
+  <div style="margin-bottom:8px">
+    <button id="toggle-wire">Wireframe: Aus</button>
+    <button id="toggle-fill">Füllung: Ein</button>
+  </div>
+  <div>
+    <span class="lbl">Kamera: ← → kreisen</span><br>
+    <span class="lbl">Radius: N / Shift+N</span>
+  </div>
+</div>
+<div id="info">
+  <div><strong>Szene</strong>: zwei Grundkörper (Würfel + Torus) + rekursive Kugel</div>
+  <div style="margin-top:6px">Interaktiv: Maus (Orbit), Tastatur: Pfeile &nbsp;N / ⇧N</div>
+</div>
 
+<script type="module">
+// Single-file Three.js scene
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
-<script>
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0b0f);
 
-  const canvas = document.getElementById('canvas');
-  const gl = canvas.getContext('webgl');
-  if (!gl) alert('WebGL wird nicht unterstützt!');
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
+let camAngle = 0; // radians, around Y axis
+let camRadius = 12;
+const target = new THREE.Vector3(0,0,0);
+camera.position.set(Math.sin(camAngle)*camRadius, 3, Math.cos(camAngle)*camRadius);
+camera.up.set(0,1,0);
+camera.lookAt(target);
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  gl.viewport(0, 0, canvas.width, canvas.height);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+container.appendChild(renderer.domElement);
 
-  // Shader
-  const vs = `
-    attribute vec2 a_pos;
-    attribute vec4 a_color;
-    varying vec4 v_color;
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(target);
+controls.enableKeys = false; // we handle keyboard ourselves
 
-    void main() {
-      gl_Position = vec4(a_pos, 0.0, 1.0);
-      v_color = a_color;
-    }
-  `;
+// Lights
+const hemi = new THREE.HemisphereLight(0x8888ff, 0x444422, 0.6);
+scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+dir.position.set(5,10,7);
+scene.add(dir);
 
-  const fs = `
-    precision mediump float;
-    varying vec4 v_color;
+// --- Teil 1: mindestens zwei Grundkörper ---
+// 1) Würfel
+const cubeGeom = new THREE.BoxGeometry(2,2,2);
+const cubeMat = new THREE.MeshStandardMaterial({color:0x4f83ff, metalness:0.3, roughness:0.6});
+const cube = new THREE.Mesh(cubeGeom, cubeMat);
+cube.position.set(-4,1,0);
+scene.add(cube);
 
-    void main() {
-      gl_FragColor = v_color;
-    }
-  `;
+// 2) Torus
+const torusGeom = new THREE.TorusGeometry(1.2,0.4,24,60);
+const torusMat = new THREE.MeshStandardMaterial({color:0xff8a5b, metalness:0.2, roughness:0.5});
+const torus = new THREE.Mesh(torusGeom, torusMat);
+torus.position.set(4,1,0);
+torus.rotation.x = Math.PI/4;
+scene.add(torus);
 
-  function compile(src, type) {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-      console.error('Shader Fehler:', gl.getShaderInfoLog(s));
-    }
-    return s;
+// ground plane
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(60,60), new THREE.MeshStandardMaterial({color:0x222222, roughness:1}));
+ground.rotation.x = -Math.PI/2; ground.position.y = 0;
+scene.add(ground);
+
+// --- Teil 2: rekursive Kugel aus Oktaeder ---
+let recursionDepth = 0;
+const maxDepth = 6; // safety
+let sphereGroup = new THREE.Group();
+scene.add(sphereGroup);
+
+function makeOctahedron(){
+  // vertices of unit octahedron
+  const v = [
+    [1,0,0],[ -1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]
+  ];
+  // faces - triangles (index into v)
+  const f = [
+    [0,2,4],[2,1,4],[1,3,4],[3,0,4],
+    [2,0,5],[1,2,5],[3,1,5],[0,3,5]
+  ];
+  // convert to flat arrays
+  const vertices = [];
+  for(const vert of v) vertices.push(...vert);
+  const indices = [];
+  for(const tri of f) indices.push(...tri);
+  return {vertices, indices};
+}
+
+function subdivideToSphere(vertices, indices, depth){
+  // vertices: flat array [x,y,z,...]
+  // indices: flat array of triplets
+  if(depth===0) return {vertices, indices};
+
+  let vertList = vertices.slice();
+  const faces = [];
+  for(let i=0;i<indices.length;i+=3){
+    faces.push([indices[i], indices[i+1], indices[i+2]]);
   }
 
-  const prog = gl.createProgram();
-  gl.attachShader(prog, compile(vs, gl.VERTEX_SHADER));
-  gl.attachShader(prog, compile(fs, gl.FRAGMENT_SHADER));
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
-
-  const aPos = gl.getAttribLocation(prog, "a_pos");
-  const aColor = gl.getAttribLocation(prog, "a_color");
-
-  gl.clearColor(0.0, 0.0, 0.3, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  // -----------------------------------------------------------
-  // Erweiterte drawShape()-Funktion (unterstützt Farbverlauf oder Einzelfarbe)
-  function drawShape(vertices, color, mode = gl.TRIANGLES) {
-    // Positionen
-    const vertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(aPos);
-
-    // Farben
-    const colorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-
-    let colorArray;
-    if (color.length === 4) {
-      // eine Farbe → für jeden Vertex wiederholen
-      const count = vertices.length / 2;
-      colorArray = [];
-      for (let i = 0; i < count; i++) colorArray.push(...color);
-    } else {
-      // mehrere Farben → direkt übernehmen
-      colorArray = color;
-    }
-
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorArray), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(aColor, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(aColor);
-
-    gl.drawArrays(mode, 0, vertices.length / 2);
+  // map to find midpoints (avoid duplicates)
+  const midpointMap = new Map();
+  function midpoint(a,b){
+    const key = a<b ? `${a}_${b}` : `${b}_${a}`;
+    if(midpointMap.has(key)) return midpointMap.get(key);
+    const ax = vertList[3*a], ay = vertList[3*a+1], az = vertList[3*a+2];
+    const bx = vertList[3*b], by = vertList[3*b+1], bz = vertList[3*b+2];
+    const mx = (ax+bx)/2, my = (ay+by)/2, mz = (az+bz)/2;
+    // normalize to unit sphere
+    const len = Math.hypot(mx,my,mz) || 1;
+    const nx = mx/len, ny = my/len, nz = mz/len;
+    const idx = vertList.length/3;
+    vertList.push(nx,ny,nz);
+    midpointMap.set(key, idx);
+    return idx;
   }
 
+  let newFaces = [];
+  for(const tri of faces){
+    const [a,b,c] = tri;
+    const ab = midpoint(a,b);
+    const bc = midpoint(b,c);
+    const ca = midpoint(c,a);
+    newFaces.push([a,ab,ca]);
+    newFaces.push([ab,b,bc]);
+    newFaces.push([ca,bc,c]);
+    newFaces.push([ab,bc,ca]);
+  }
 
-  // -----------------------------------------------------------
-  // Farbflächen
+  const newIndices = [];
+  for(const t of newFaces) newIndices.push(...t);
 
-  // Linke Gesichtsseite
-  drawShape([
-    -0.1, 0.4, -0.5, 0.8, -0.3, 0.2, -0.1, 0.1, 0.1, 0.4
-  ], [1.0, 0.5, 0.0, 1.0], gl.TRIANGLE_FAN);
+  return subdivideToSphere(vertList, newIndices, depth-1);
+}
 
-  // Rechte Gesichtsseite
-  drawShape([
-    0.1, 0.4, -0.1, 0.1, 0.1, 0.1, 0.3, 0.2, 0.5, 0.8
-  ], [1.0, 0.5, 0.0, 1.0], gl.TRIANGLE_FAN);
+// Create colored mesh + edges
+let sphereMesh = null;
+let sphereEdges = null;
+let sphereRadius = 1.8;
 
-  // Mittlerer Bereich (Schnauze)
-  drawShape([
-    0.1, 0.0, 0.1, 0.1, -0.1, 0.1, -0.1, 0.0, -0.1, -0.5, 0.1, -0.5
-  ], [1.0, 0.5, 0.0, 1.0], gl.TRIANGLE_FAN);
+function buildRecursiveSphere(depth){
+  if(sphereMesh){
+    sphereGroup.remove(sphereMesh);
+    sphereMesh.geometry.dispose();
+    sphereMesh.material.dispose();
+    sphereMesh = null;
+  }
+  if(sphereEdges){
+    sphereGroup.remove(sphereEdges);
+    sphereEdges.geometry.dispose();
+    sphereEdges.material.dispose();
+    sphereEdges = null;
+  }
 
-  // Wange links
-  drawShape([
-    -0.3, 0.2, -0.5, 0.3, -0.8, 0.1, -0.6, -0.1
-  ], [1.0, 0.5, 0.0, 1.0], gl.TRIANGLE_FAN);
+  const base = makeOctahedron();
+  const res = subdivideToSphere(base.vertices, base.indices, depth);
 
-  // Wange rechts
-  drawShape([
-    0.3, 0.2, 0.5, 0.3, 0.8, 0.1, 0.6, -0.1
-  ], [1.0, 0.5, 0.0, 1.0], gl.TRIANGLE_FAN);
+  const geom = new THREE.BufferGeometry();
+  const pos = new Float32Array(res.vertices);
+  geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geom.setIndex(res.indices);
+  geom.computeVertexNormals();
 
-  // Nase (braun)
-  drawShape([
-    -0.1, -0.5, 0.1, -0.5, 0.0, -0.6
-  ], [0.4, 0.2, 0.0, 1.0], gl.TRIANGLES);
+  // Per-face color: produce a color for each face and expand to vertex colors
+  const faceCount = res.indices.length/3;
+  const colors = new Float32Array(pos.length);
+  for(let fi=0; fi<faceCount; ++fi){
+    const c = new THREE.Color().setHSL((fi/Math.max(1,faceCount))*0.85, 0.6, 0.5);
+    const ia = res.indices[3*fi+0];
+    const ib = res.indices[3*fi+1];
+    const ic = res.indices[3*fi+2];
+    // assign same color to vertices of this face
+    colors[3*ia+0] = c.r; colors[3*ia+1] = c.g; colors[3*ia+2] = c.b;
+    colors[3*ib+0] = c.r; colors[3*ib+1] = c.g; colors[3*ib+2] = c.b;
+    colors[3*ic+0] = c.r; colors[3*ic+1] = c.g; colors[3*ic+2] = c.b;
+  }
+  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-// Schnauze mit Farbverlauf
-drawShape([
-  0.0, -0.6,
-  -0.1, -0.8, 
-  0.1, -0.8 
-], [
-  0.9, 0.9, 0.9, 1.0,
-  0.6, 0.6, 0.6, 1.0,
-  0.6, 0.6, 0.6, 1.0 
-], gl.TRIANGLES);
+  const mat = new THREE.MeshStandardMaterial({vertexColors:true, flatShading:false, metalness:0.2, roughness:0.6});
+  sphereMesh = new THREE.Mesh(geom, mat);
+  sphereMesh.scale.setScalar(sphereRadius);
+  sphereMesh.position.set(0, 1.5, 0);
+  sphereGroup.add(sphereMesh);
 
-  // Schnauze rechts
-  drawShape([
-    -0.1, -0.8, 0.0, -0.6, -0.1, -0.5, -0.1, -0.3, -0.3, -0.3
-  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+  // edges
+  const edges = new THREE.EdgesGeometry(geom);
+  const lineMat = new THREE.LineBasicMaterial({linewidth:1});
+  sphereEdges = new THREE.LineSegments(edges, lineMat);
+  sphereEdges.scale.setScalar(sphereRadius);
+  sphereEdges.position.copy(sphereMesh.position);
+  sphereGroup.add(sphereEdges);
+}
 
-  // Schnauze links
-  drawShape([
-    0.1, -0.8, 0.0, -0.6, 0.1, -0.5, 0.1, -0.3, 0.3, -0.3
-  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+// initial build
+buildRecursiveSphere(recursionDepth);
 
-  // Augenhöhle rechts
-  drawShape([
-    0.1, 0.1, 0.3, 0.2, 0.4, 0.1, 0.2, 0.1, 0.1, 0.0
-  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+// UI wiring
+const depthVal = document.getElementById('depth-val');
+const btnPlus = document.getElementById('depth-plus');
+const btnMinus = document.getElementById('depth-minus');
+const toggleWire = document.getElementById('toggle-wire');
+const toggleFill = document.getElementById('toggle-fill');
 
-  // Augenhöhle links
-  drawShape([
-    -0.1, 0.1, -0.3, 0.2, -0.4, 0.1, -0.2, 0.1, -0.1, 0.0
-  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+function updateDepth(d){
+  recursionDepth = Math.max(0, Math.min(maxDepth, d));
+  depthVal.textContent = recursionDepth;
+  buildRecursiveSphere(recursionDepth);
+}
+btnPlus.onclick = ()=> updateDepth(recursionDepth+1);
+btnMinus.onclick = ()=> updateDepth(recursionDepth-1);
 
-  // Unterauge links
-  drawShape([
-    -0.1, 0.0, -0.1, -0.3, -0.4, -0.3
-  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLES);
+let wireOn = false; // show edges
+let fillOn = true;
+function updateWireUI(){
+  toggleWire.textContent = `Wireframe: ${wireOn? 'Ein':'Aus'}`;
+  toggleFill.textContent = `Füllung: ${fillOn? 'Ein':'Aus'}`;
+  if(sphereMesh) sphereMesh.visible = fillOn;
+  if(sphereEdges) sphereEdges.visible = wireOn;
+}
 
-  // Unterauge rechts
-  drawShape([
-    0.1, 0.0, 0.1, -0.3, 0.4, -0.3
-  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLES);
+toggleWire.onclick = ()=>{ wireOn = !wireOn; updateWireUI(); };
+toggleFill.onclick = ()=>{ fillOn = !fillOn; updateWireUI(); };
+updateWireUI();
 
-  // Außenwange links
-  drawShape([
-    -0.4, -0.3, -0.2, -0.1, -0.3, -0.1, -0.4, 0.0, -0.4, 0.0, -0.4, 0.1, -0.6, -0.1, -0.6, -0.3
-  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+// Position sphereGroup nicely
+sphereGroup.position.set(0,0,0);
 
-  // Außenwange rechts
-  drawShape([
-    0.4, -0.3, 0.2, -0.1, 0.3, -0.1, 0.4, 0.0, 0.4, 0.0, 0.4, 0.1, 0.6, -0.1, 0.6, -0.3
-  ], [1.0, 1.0, 1.0, 1.0], gl.TRIANGLE_FAN);
+// Keyboard camera control: Pfeil links/rechts -> camAngle change; N / Shift+N change radius
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowLeft'){
+    camAngle -= Math.PI/36; // 5 degrees
+    e.preventDefault();
+  } else if(e.key === 'ArrowRight'){
+    camAngle += Math.PI/36;
+    e.preventDefault();
+  } else if(e.key === 'n' || e.key === 'N'){
+    // increase or decrease radius
+    if(e.shiftKey){ camRadius = Math.max(3, camRadius - 0.5); }
+    else { camRadius = Math.min(60, camRadius + 0.5); }
+    e.preventDefault();
+  }
+});
 
- // Auge links mit Verlauf:
-  drawShape([
-    -0.2, 0.1, -0.1, 0.0, -0.2, -0.1, -0.3, -0.1, -0.4, 0.0, -0.4, 0.1
-  ], [
-    0.6, 0.95, 1.0, 1.0,  // hell oben
-    0.5, 0.9, 1.0, 1.0,
-    0.3, 0.7, 0.9, 1.0,   // dunkler unten
-    0.3, 0.7, 0.9, 1.0,
-    0.5, 0.9, 1.0, 1.0,
-    0.6, 0.95, 1.0, 1.0
-  ], gl.TRIANGLE_FAN);
+// animate
+function animate(){
+  requestAnimationFrame(animate);
+  // update camera position on circle around Y-axis (XZ-plane)
+  camera.position.set(Math.sin(camAngle)*camRadius, camera.position.y, Math.cos(camAngle)*camRadius);
+  // keep camera height stable (allow orbit controls to change it)
+  camera.lookAt(target);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
 
-  //Auge rechts mit Verlauf:
-  drawShape([
-    0.2, 0.1, 0.1, 0.0, 0.2, -0.1, 0.3, -0.1, 0.4, 0.0, 0.4, 0.1
-  ], [
-    0.6, 0.95, 1.0, 1.0,
-    0.5, 0.9, 1.0, 1.0,
-    0.3, 0.7, 0.9, 1.0,
-    0.3, 0.7, 0.9, 1.0,
-    0.5, 0.9, 1.0, 1.0,
-    0.6, 0.95, 1.0, 1.0
-  ], gl.TRIANGLE_FAN);
-
-  // Ohr links
-  drawShape([
-    -0.5, 0.8, -0.3, 0.2, -0.5, 0.3
-  ], [0.9, 0.4, 0.6, 1.0], gl.TRIANGLES);
-
-  // Ohr rechts
-  drawShape([
-    0.5, 0.8, 0.3, 0.2, 0.5, 0.3
-  ], [0.9, 0.4, 0.6, 1.0], gl.TRIANGLES);
+// handle resize
+window.addEventListener('resize', ()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
 </script>
-
-
 </body>
 </html>
