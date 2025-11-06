@@ -18,7 +18,7 @@ var torus = ( function() {
 
 		var du = 2 * Math.PI / n;
 		var dv = 2 * Math.PI / m;
-		var r = 0.3;
+		var r = 0.1;
 		var R = 0.5;
 		// Counter for entries in index array.
 		var iLines = 0;
@@ -84,3 +84,70 @@ var torus = ( function() {
 	}
 
 }());
+
+var cube = (function() {
+
+	function createVertexData(size = 0.8, position = [0, 0, 0]) {
+		const [px, py, pz] = position;
+		const s = size / 2; // halbe Höhe und Breite
+
+		// === VERTEX POSITIONEN ===
+		// 6 Ecken: oben, unten, vorne, hinten, rechts, links
+		this.vertices = new Float32Array([
+			px,      py + s, pz,      // 0 - Spitze oben
+			px,      py - s, pz,      // 1 - Spitze unten
+			px,      py,     pz + s,  // 2 - vorne
+			px + s,  py,     pz,      // 3 - rechts
+			px,      py,     pz - s,  // 4 - hinten
+			px - s,  py,     pz       // 5 - links
+		]);
+
+		// === NORMALEN (ungefähr geglättet) ===
+		this.normals = new Float32Array([
+			0,  1,  0,   // oben
+			0, -1,  0,   // unten
+			0,  0.5,  1, // vorne
+			1,  0.5,  0, // rechts
+			0,  0.5, -1, // hinten
+			-1, 0.5,  0  // links
+		]);
+
+		// Normalisieren aller Normalen
+		for (let i = 0; i < this.normals.length; i += 3) {
+			let x = this.normals[i];
+			let y = this.normals[i + 1];
+			let z = this.normals[i + 2];
+			let len = Math.sqrt(x * x + y * y + z * z);
+			this.normals[i]     = x / len;
+			this.normals[i + 1] = y / len;
+			this.normals[i + 2] = z / len;
+		}
+
+		// === KANTEN (Linien) ===
+		this.indicesLines = new Uint16Array([
+			0, 2, 0, 3, 0, 4, 0, 5, // obere Pyramide
+			1, 2, 1, 3, 1, 4, 1, 5, // untere Pyramide
+			2, 3, 3, 4, 4, 5, 5, 2  // Mittelring
+		]);
+
+		// === DREIECKE ===
+		this.indicesTris = new Uint16Array([
+			// obere Hälfte
+			0, 2, 3,
+			0, 3, 4,
+			0, 4, 5,
+			0, 5, 2,
+
+			// untere Hälfte
+			1, 3, 2,
+			1, 4, 3,
+			1, 5, 4,
+			1, 2, 5
+		]);
+	}
+
+	return {
+		createVertexData: createVertexData
+	};
+})();
+
