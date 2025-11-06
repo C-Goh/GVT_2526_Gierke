@@ -1,324 +1,35 @@
-<!DOCTYPE html>
-<html lang="de">
+<!DOCTYPE html5>
+<html>
+    <head>
+        <script src="./ext/gl-matrix.js"></script>
+        <script src="./JS files/GVT_Src_vertexData_torus.js"></script>
+        <script src="./JS files/KAP_Src_tpl.js"></script>
+        <script type="x-shader/x-vertex" id="vertexshader">
+            attribute vec3 aPosition;
+            attribute vec3 aNormal;
 
-<head>
-  <meta charset="UTF-8">
-  <title>ESA 5 - Kamerabewegung</title>
+            uniform mat4 uPMatrix;
+            uniform mat4 uMVMatrix;
 
-  <!-- Dokumentation
+            varying vec4 vColor;
 
-  Author: Nina Gierke
-  -->
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #262630;
-      color: #ffffff;
-      margin: 0;
-      padding: 20px;
-      min-height: 100vh;
-
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    #task {
-      max-width: 600px;
-      margin-bottom: 40px;
-    }
-
-    #panelCanvas {
-      display: flex;
-      flex-direction: row;
-      /* Nebeneinander statt untereinander */
-      align-items: flex-start;
-      justify-content: center;
-      gap: 30px;
-      /* Abstand zwischen den Canvases */
-      width: 100%;
-      flex-wrap: wrap;
-      /* Falls Bildschirm zu klein ist, umbrechen */
-    }
-
-    canvas {
-      width: 550px;
-      height: 550px;
-      background: #ffffff;
-      display: block;
-    }
-  </style>
-</head>
-
-<body>
-  <h1>ESA 5 - Kamerabewegung</h1>
-
-  <div id="task">
-    <h3>Aufgabenstellung</h3>
-
-    <p>Als Inspiration wurde die Seite http://www.3d-meier.de/tut3/Seite0.html verwendet.</p>
-    <p>Author: Nina Gierke</p>
-  </div>
-
-  <div id="panelCanvas">
-    <canvas id="canvas" width="1200" height="1200"></canvas>
-
-  </div>
-
-
-
-  <script>
-    function render(canvas, mode) {
-
-      let gl = canvas.getContext("webgl");
-      gl.clearColor(1, 1, 1, 1);
-      gl.enable(gl.DEPTH_TEST);
-
-      /* Shader */
-      const vsSource = `
-    attribute vec3 pos;
-    attribute vec4 col;
-    uniform mat4 uMVP;
-    varying vec4 vColor;
-    void main(){
-      vColor = col;
-      gl_Position = uMVP * vec4(pos, 1.0);
-    }
-  `;
-      const fsSource = `
-    precision mediump float;
-    varying vec4 vColor;
-    void main() {
-      gl_FragColor = vColor;
-    }
-  `;
-
-      function compile(type, src) {
-        let s = gl.createShader(type);
-        gl.shaderSource(s, src);
-        gl.compileShader(s);
-        return s;
-      }
-      let prog = gl.createProgram();
-      gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
-      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
-      gl.linkProgram(prog);
-      gl.useProgram(prog);
-
-      let vertices, colors, lineIndices, fillIndices;
-
-      if (mode === "pseudosphere") createPseudosphere();
-
-      let vboPos = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, vboPos);
-      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-      let aPos = gl.getAttribLocation(prog, "pos");
-      gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
-      gl.enableVertexAttribArray(aPos);
-
-      let vboCol = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, vboCol);
-      gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-      let aCol = gl.getAttribLocation(prog, "col");
-      gl.vertexAttribPointer(aCol, 4, gl.FLOAT, false, 0, 0);
-      gl.enableVertexAttribArray(aCol);
-
-      let iboFill = gl.createBuffer();
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboFill);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, fillIndices, gl.STATIC_DRAW);
-
-      let uMVP = gl.getUniformLocation(prog, "uMVP");
-
-      // ---- Kamera-Orbit ----
-      let angle = 0;
-      let radius = 2.5;
-      const radiusStep = 0.1;
-
-      function getMVP() {
-        let eyeX = Math.sin(angle) * radius;
-        let eyeZ = Math.cos(angle) * radius;
-        let eyeY = 1.0;
-
-        let view = mat4LookAt([eyeX, eyeY, eyeZ], [0, 0, 0], [0, 1, 0]);
-        let proj = mat4Perspective(Math.PI / 3, canvas.width / canvas.height, 0.1, 100);
-
-        return mat4Multiply(proj, view);
-      }
-
-      // Key Listener
-      window.addEventListener("keydown", e => {
-        if (e.key === "ArrowRight") angle += 0.05;
-        if (e.key === "ArrowLeft") angle -= 0.05;
-
-        // Radius ändern mit N / Shift+N
-        if (e.key === "n" || e.key === "N") {
-          if (e.shiftKey) {
-            radius = Math.max(0.5, radius - radiusStep); // kleiner, aber nicht kleiner als 0.5
-          } else {
-            radius += radiusStep; // größer
-          }
-        }
-      });
-
-
-      function draw() {
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-        let mvp = getMVP();
-        gl.uniformMatrix4fv(uMVP, false, mvp);
-
-        gl.drawElements(gl.TRIANGLES, fillIndices.length, gl.UNSIGNED_SHORT, 0);
-
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboFill);
-        requestAnimationFrame(draw);
-      }
-
-      draw();
-
-      // -------- Matrix Helferfunktionen --------
-      function mat4LookAt(eye, center, up) {
-        let z = normalize(sub(eye, center));
-        let x = normalize(cross(up, z));
-        let y = cross(z, x);
-
-        return new Float32Array([
-          x[0], y[0], z[0], 0,
-          x[1], y[1], z[1], 0,
-          x[2], y[2], z[2], 0,
-          -dot(x, eye), -dot(y, eye), -dot(z, eye), 1
-        ]);
-      }
-
-      function mat4Perspective(fovy, aspect, near, far) {
-        let f = 1 / Math.tan(fovy / 2);
-        return new Float32Array([
-          f / aspect, 0, 0, 0,
-          0, f, 0, 0,
-          0, 0, (far + near) / (near - far), -1,
-          0, 0, (2 * far * near) / (near - far), 0
-        ]);
-      }
-
-      function mat4Multiply(a, b) {
-        let out = new Float32Array(16);
-        for (let i = 0; i < 4; i++)
-          for (let j = 0; j < 4; j++)
-            out[i * 4 + j] = a[i * 4 + 0] * b[0 * 4 + j] + a[i * 4 + 1] * b[1 * 4 + j] + a[i * 4 + 2] * b[2 * 4 + j] + a[i * 4 + 3] * b[3 * 4 + j];
-        return out;
-      }
-
-      function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
-      function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
-      function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
-      function normalize(a) { let l = Math.hypot(a[0], a[1], a[2]); return [a[0] / l, a[1] / l, a[2] / l]; }
-
-      // ----------- Dein Objekt-Generator (unverändert) ------------
-
-      function setup(n, m) {
-        vertices = new Float32Array(3 * (n + 1) * (m + 1));
-        colors = new Float32Array(4 * (n + 1) * (m + 1));
-        lineIndices = [];
-        fillIndices = [];
-        return { n, m };
-      }
-
-      function createPseudosphere() {
-        let treeCount = 3;
-        let n = 32, m = 40;
-        let trunkHeight = 0.3;
-        let coneHeight = 0.8;
-        let totalHeight = trunkHeight + coneHeight;
-
-        let trunkRadius = 0.08;
-        let coneBaseRadius = 0.35;
-
-        let xOffsets = [-0.6, 0, 0.6];
-
-
-        setup(n * treeCount, m);
-
-        let vertexIndex = 0;
-
-        function addTree(xOffset) {
-          let baseIndex = vertexIndex;
-
-          for (let i = 0; i <= n; i++) {
-            let u = (i / n) * Math.PI * 2;
-            for (let j = 0; j <= m; j++) {
-              let v = j / m;
-
-              let x, y, z;
-
-              if (v < trunkHeight / totalHeight) {
-                let h = v / (trunkHeight / totalHeight);
-                let r = trunkRadius;
-
-                x = r * Math.cos(u);
-                y = h * trunkHeight - 0.5;
-                z = r * Math.sin(u);
-
-                colors[4 * vertexIndex + 0] = 0.4;
-                colors[4 * vertexIndex + 1] = 0.25;
-                colors[4 * vertexIndex + 2] = 0.1;
-                colors[4 * vertexIndex + 3] = 1;
-
-              } else {
-                let h = (v - trunkHeight / totalHeight) / (coneHeight / totalHeight);
-                let r = coneBaseRadius * (1 - h);
-
-                x = r * Math.cos(u);
-                y = trunkHeight + h * coneHeight - 0.5;
-                z = r * Math.sin(u);
-
-                colors[4 * vertexIndex + 0] = 0.1 + 0.4 * Math.random();
-                colors[4 * vertexIndex + 1] = 0.6 + 0.3 * Math.random();
-                colors[4 * vertexIndex + 2] = 0.1;
-                colors[4 * vertexIndex + 3] = 1;
-              }
-
-              vertices[3 * vertexIndex + 0] = x + xOffset;
-              vertices[3 * vertexIndex + 1] = y;
-              vertices[3 * vertexIndex + 2] = z;
-
-              vertexIndex++;
+            void main(){
+                gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
+    
+                vColor = vec4(aNormal.x, aNormal.y, aNormal.z, 1.0);
+                vColor = (vColor + 1.0) / 2.0;
             }
-          }
+        </script>
+        <script type="x-shader/x-fragment" id="fragmentshader">
+            precision mediump float;
+            varying vec4 vColor;
 
-          for (let i = 0; i < n; i++) {
-            for (let j = 0; j < m; j++) {
-              let a = baseIndex + i * (m + 1) + j;
-              let b = a + 1;
-              let c = baseIndex + (i + 1) * (m + 1) + j;
-              let d = c + 1;
-
-              fillIndices.push(a, b, c, b, d, c);
+            void main() {
+                gl_FragColor = vColor;
             }
-          }
-        }
-
-        addTree(xOffsets[1]);
-        addTree(xOffsets[0]);
-        addTree(xOffsets[2]);
-
-        lineIndices = new Uint16Array(lineIndices);
-        fillIndices = new Uint16Array(fillIndices);
-      }
-
-    }
-
-    // Start render
-    render(document.getElementById("canvas"), "pseudosphere");
-  </script>
-
-
-
-</body>
-
+        </script>
+    </head>
+    <body onload="app.start()">
+        <canvas id="canvas" width="500" height="500"></canvas>
+    </body>
 </html>
