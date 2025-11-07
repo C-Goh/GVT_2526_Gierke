@@ -131,6 +131,12 @@ var app = (function () {
 		var fs = "fillwireframe";
 		createModel("torus", fs);
 		createModel("cube", fs);
+		createModel("boden", fs);
+		createModel("oktaeder", fs);
+
+
+
+
 
 	}
 
@@ -196,40 +202,44 @@ var app = (function () {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 	}
 
-	function initEventHandler() {
+function initEventHandler() {
+	window.onkeydown = function (evt) {
+		var key = evt.which ? evt.which : evt.keyCode;
 
-		window.onkeydown = function (evt) {
-			var key = evt.which ? evt.which : evt.keyCode;
+		switch (key) {
+			// Pfeil nach links → Kamera rotiert nach links
+			case 37:
+				camera.zAngle -= 5 * Math.PI / 180; // -5° in Radiant
+				break;
 
-			switch (key) {
-				// Pfeil nach links
-				case 37:
-					camera.zAngle -= 5 * Math.PI / 180; // -5° in Radiant
-					break;
+			// Pfeil nach rechts → Kamera rotiert nach rechts
+			case 39:
+				camera.zAngle += 5 * Math.PI / 180; // +5° in Radiant
+				break;
 
-				// Pfeil nach rechts
-				case 39:
-					camera.zAngle += 5 * Math.PI / 180; // +5° in Radiant
-					break;
+			// Taste N (mit / ohne Shift) → Kamera-Radius ändern
+			case 78: // 'N'
+				var delta = 0.2;
+				if (evt.shiftKey) {
+					// Shift + N → Kamera weiter weg
+					camera.distance += delta;
+				} else {
+					// N → Kamera näher heran, Mindestabstand 1
+					camera.distance = Math.max(1.0, camera.distance - delta);
+				}
+				break;
 
-				// Taste N (mit / ohne Shift)
-				case 78: // 'N'
-					var delta = 0.2;
-					if (evt.shiftKey)
-						delta = -delta;
-					camera.distance = Math.max(1.0, camera.distance + delta); // Mindestabstand 1
-					break;
+			// Taste O → zurück zur Ortho-Projektion (optional beibehalten)
+			case 79: // 'O'
+				camera.projectionType = "ortho";
+				camera.lrtb = 2;
+				break;
+		}
 
-				// Taste O (falls du sie behalten willst)
-				case 79: // 'O'
-					camera.projectionType = "ortho";
-					camera.lrtb = 2;
-					break;
-			}
+		render();
+	};
+}
 
-			render();
-		};
-	}
 
 	/**
 	 * Run the rendering pipeline.
@@ -309,6 +319,25 @@ var app = (function () {
 				gl.UNSIGNED_SHORT, 0);
 		}
 	}
+
+	function changeOktaederDepth(delta) {
+		let current = oktaeder.getRecursionDepth();
+		let newDepth = current + delta;
+		oktaeder.setRecursionDepth(newDepth);
+		console.log("Neue Rekursionstiefe:", newDepth);
+
+		// Oktaeder neu erstellen
+		models = [];
+		initModels();
+		render();
+	}
+
+	// App interface erweitern:
+	return {
+		start: start,
+		changeOktaederDepth: changeOktaederDepth
+	}
+
 
 	// App interface.
 	return {
