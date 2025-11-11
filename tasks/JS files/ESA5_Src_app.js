@@ -155,13 +155,14 @@ var app = (function () {
 	 * @parameter fillstyle: wireframe, fill, fillwireframe.
 	 */
 	function createModel(geometryname, fillstyle, translate, rotate, scale) {
-		var model = {};
-		model.fillstyle = fillstyle;
-		initDataAndBuffers(model, geometryname);
-		initTransformations(model, translate, rotate, scale);
+    var model = {};
+    model.geometryname = geometryname; // <-- neu: Tag für spätere Identifikation
+    model.fillstyle = fillstyle;
+    initDataAndBuffers(model, geometryname);
+    initTransformations(model, translate, rotate, scale);
 
-		models.push(model);
-	}
+    models.push(model);
+}
 
 	/**
 	 * Set scale, rotation and transformation for model.
@@ -367,6 +368,67 @@ var app = (function () {
 				gl.UNSIGNED_SHORT, 0);
 		}
 	}
+
+	function changeOktaederDepth(delta) {
+		let newDepth = oktaeder.getRecursionDepth() + delta;
+		if (newDepth < 0) newDepth = 0;
+		if (newDepth > 6) newDepth = 6;
+
+		oktaeder.setRecursionDepth(newDepth);
+		console.log("Neue Rekursionstiefe:", newDepth);
+
+		// Finde das Oktaeder-Modell per geometryname-Tag
+		var okModel = null;
+		for (let i = 0; i < models.length; i++) {
+			if (models[i].geometryname === "oktaeder") {
+				okModel = models[i];
+				break;
+			}
+		}
+		if (!okModel) {
+			console.warn("Oktaeder-Modell nicht gefunden!");
+			return;
+		}
+
+		// Neu berechnen der Vertex-/Indexdaten (createVertexData füllt fields in 'this')
+		oktaeder.createVertexData.apply(okModel);
+
+		// GPU-Buffers aktualisieren
+		// Positionen
+		gl.bindBuffer(gl.ARRAY_BUFFER, okModel.vboPos);
+		gl.bufferData(gl.ARRAY_BUFFER, okModel.vertices, gl.STATIC_DRAW);
+
+		// Normals
+		gl.bindBuffer(gl.ARRAY_BUFFER, okModel.vboNormal);
+		gl.bufferData(gl.ARRAY_BUFFER, okModel.normals, gl.STATIC_DRAW);
+
+		// Triangles Indices
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, okModel.iboTris);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, okModel.indicesTris, gl.STATIC_DRAW);
+		// WICHTIG: Anzahl der Elemente aktualisieren
+		okModel.iboTris.numberOfElements = okModel.indicesTris.length;
+
+		// Lines Indices
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, okModel.iboLines);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, okModel.indicesLines, gl.STATIC_DRAW);
+		okModel.iboLines.numberOfElements = okModel.indicesLines.length;
+
+		// Optional: Buffers unbinden
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+		// Szene neu zeichnen
+		render();
+	}
+
+
+
+
+	return {
+		start: start,
+		changeOktaederDepth: changeOktaederDepth,
+	};
+
 
 	// App interface.
 	return {
