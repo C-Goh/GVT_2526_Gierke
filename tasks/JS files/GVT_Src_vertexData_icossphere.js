@@ -1,6 +1,6 @@
 var oktaeder = (function () {
 
-	var currentLevel = 2; // Standard-Rekursionstiefe
+	var currentLevel = 2;
 
 	function setRecursionDepth(lvl) {
 		currentLevel = lvl | 0;
@@ -12,9 +12,8 @@ var oktaeder = (function () {
 
 	function createVertexData() {
 		var level  = (this.level != null ? this.level : currentLevel) | 0;
-		var radius = (this.radius != null ? this.radius : 0.5);
+		var radius = (this.radius != null ? this.radius : 0.8);
 
-		// Icosaeder-Basis
 		var t = (1 + Math.sqrt(5)) / 2;
 		var baseVerts = [
 			[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],

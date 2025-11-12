@@ -127,7 +127,19 @@ var app = (function () {
 
 		// Model-View-Matrix.
 		prog.mvMatrixUniform = gl.getUniformLocation(prog, "uMVMatrix");
+
+		// Neue Uniforms
+		prog.uColor = gl.getUniformLocation(prog, "uColor");
+		prog.uIsWireframe = gl.getUniformLocation(prog, "uIsWireframe");
+
+		// Setze Default-Werte
+		gl.useProgram(prog);
+		// Default: nicht-wireframe (also Flächen-Shader aktiv)
+		gl.uniform1i(prog.uIsWireframe, 0);
+		// Default-Farbe (falls gebraucht)
+		if (prog.uColor) gl.uniform3f(prog.uColor, 1.0, 0.0, 0.0);
 	}
+
 
 	function initModels() {
 		// fillstyle
@@ -155,14 +167,14 @@ var app = (function () {
 	 * @parameter fillstyle: wireframe, fill, fillwireframe.
 	 */
 	function createModel(geometryname, fillstyle, translate, rotate, scale) {
-    var model = {};
-    model.geometryname = geometryname; // <-- neu: Tag für spätere Identifikation
-    model.fillstyle = fillstyle;
-    initDataAndBuffers(model, geometryname);
-    initTransformations(model, translate, rotate, scale);
+		var model = {};
+		model.geometryname = geometryname; // <-- neu: Tag für spätere Identifikation
+		model.fillstyle = fillstyle;
+		initDataAndBuffers(model, geometryname);
+		initTransformations(model, translate, rotate, scale);
 
-    models.push(model);
-}
+		models.push(model);
+	}
 
 	/**
 	 * Set scale, rotation and transformation for model.
@@ -328,7 +340,7 @@ var app = (function () {
 		mat4.identity(mMatrix);
 		mat4.identity(mvMatrix);
 
-		// Translate.
+		// Translate
 		mat4.translate(mMatrix, mMatrix, model.translate);
 
 		// Scale
@@ -342,32 +354,37 @@ var app = (function () {
 	function draw(model) {
 		// Setup position VBO.
 		gl.bindBuffer(gl.ARRAY_BUFFER, model.vboPos);
-		gl.vertexAttribPointer(prog.positionAttrib, 3, gl.FLOAT, false,
-			0, 0);
+		gl.vertexAttribPointer(prog.positionAttrib, 3, gl.FLOAT, false, 0, 0);
 
 		// Setup normal VBO.
 		gl.bindBuffer(gl.ARRAY_BUFFER, model.vboNormal);
 		gl.vertexAttribPointer(prog.normalAttrib, 3, gl.FLOAT, false, 0, 0);
 
-		// Setup rendering tris.
+		// Flächen 
 		var fill = (model.fillstyle.search(/fill/) != -1);
 		if (fill) {
+			if (prog.uIsWireframe) gl.uniform1i(prog.uIsWireframe, 0);
 			gl.enableVertexAttribArray(prog.normalAttrib);
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.iboTris);
-			gl.drawElements(gl.TRIANGLES, model.iboTris.numberOfElements,
-				gl.UNSIGNED_SHORT, 0);
+			gl.drawElements(gl.TRIANGLES, model.iboTris.numberOfElements, gl.UNSIGNED_SHORT, 0);
 		}
 
-		// Setup rendering lines.
+		// Linien
 		var wireframe = (model.fillstyle.search(/wireframe/) != -1);
 		if (wireframe) {
+			if (prog.uIsWireframe) gl.uniform1i(prog.uIsWireframe, 1);
+
 			gl.disableVertexAttribArray(prog.normalAttrib);
-			gl.vertexAttrib3f(prog.normalAttrib, 0, 0, 0);
+
+			gl.vertexAttrib3f(prog.normalAttrib, 0.0, 1.0, 0.0);
+
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.iboLines);
-			gl.drawElements(gl.LINES, model.iboLines.numberOfElements,
-				gl.UNSIGNED_SHORT, 0);
+			gl.drawElements(gl.LINES, model.iboLines.numberOfElements, gl.UNSIGNED_SHORT, 0);
+
+			gl.enableVertexAttribArray(prog.normalAttrib);
 		}
 	}
+
 
 	function changeOktaederDepth(delta) {
 		let newDepth = oktaeder.getRecursionDepth() + delta;
@@ -375,9 +392,7 @@ var app = (function () {
 		if (newDepth > 6) newDepth = 6;
 
 		oktaeder.setRecursionDepth(newDepth);
-		console.log("Neue Rekursionstiefe:", newDepth);
 
-		// Finde das Oktaeder-Modell per geometryname-Tag
 		var okModel = null;
 		for (let i = 0; i < models.length; i++) {
 			if (models[i].geometryname === "oktaeder") {
@@ -390,7 +405,6 @@ var app = (function () {
 			return;
 		}
 
-		// Neu berechnen der Vertex-/Indexdaten (createVertexData füllt fields in 'this')
 		oktaeder.createVertexData.apply(okModel);
 
 		// GPU-Buffers aktualisieren
@@ -402,24 +416,48 @@ var app = (function () {
 		gl.bindBuffer(gl.ARRAY_BUFFER, okModel.vboNormal);
 		gl.bufferData(gl.ARRAY_BUFFER, okModel.normals, gl.STATIC_DRAW);
 
-		// Triangles Indices
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, okModel.iboTris);
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, okModel.indicesTris, gl.STATIC_DRAW);
 		// WICHTIG: Anzahl der Elemente aktualisieren
 		okModel.iboTris.numberOfElements = okModel.indicesTris.length;
 
-		// Lines Indices
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, okModel.iboLines);
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, okModel.indicesLines, gl.STATIC_DRAW);
 		okModel.iboLines.numberOfElements = okModel.indicesLines.length;
 
-		// Optional: Buffers unbinden
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
-		// Szene neu zeichnen
 		render();
 	}
+
+	function toggleOktaederLines() {
+		// Finde das Oktaeder-Modell
+		let okModel = null;
+		for (let i = 0; i < models.length; i++) {
+			if (models[i].geometryname === "oktaeder") {
+				okModel = models[i];
+				break;
+			}
+		}
+		if (!okModel) {
+			console.warn("Oktaeder-Modell nicht gefunden!");
+			return;
+		}
+
+		// Fillstyle umschalten
+		if (okModel.fillstyle === "fillwireframe") {
+			okModel.fillstyle = "fill"; // Linien aus
+		} else if (okModel.fillstyle === "fill") {
+			okModel.fillstyle = "fillwireframe"; // Linien an
+		} else {
+			// Falls es anders initialisiert wurde
+			okModel.fillstyle = "fillwireframe";
+		}
+
+		render();
+	}
+
 
 
 
@@ -427,12 +465,10 @@ var app = (function () {
 	return {
 		start: start,
 		changeOktaederDepth: changeOktaederDepth,
+		toggleOktaederLines: toggleOktaederLines
+
 	};
 
 
-	// App interface.
-	return {
-		start: start
-	}
 
 }());

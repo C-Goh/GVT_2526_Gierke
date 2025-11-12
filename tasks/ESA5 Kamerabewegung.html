@@ -82,30 +82,49 @@
 
     <script src="./JS files/ESA5_Src_app.js"></script>
 
-    <script type="x-shader/x-vertex" id="vertexshader">
+    <script id="vertexshader" type="x-shader/x-vertex">
         attribute vec3 aPosition;
         attribute vec3 aNormal;
 
-        uniform mat4 uPMatrix;
         uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+        uniform bool uIsWireframe;
 
-        varying vec4 vColor;
+        varying vec3 vNormal;
 
-        void main(){
+        void main(void) {
+
+            vec3 n = aNormal;
+            if (length(n) < 1e-5) {
+                n = vec3(0.0, 1.0, 0.0);
+            }
+            vNormal = normalize(n);
+
             gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
-            vColor = vec4(aNormal.x, aNormal.y, aNormal.z, 1.0);
-            vColor = (vColor + 1.0) / 2.0;
         }
     </script>
 
-    <script type="x-shader/x-fragment" id="fragmentshader">
+
+    <script id="fragmentshader" type="x-shader/x-fragment">
         precision mediump float;
-        varying vec4 vColor;
 
-        void main() {
-            gl_FragColor = vColor;
+        varying vec3 vNormal;
+        uniform vec3 uColor;        // nicht zwingend gebraucht, aber vorbereitet
+        uniform bool uIsWireframe;
+
+        void main(void) {
+            if (uIsWireframe) {
+                // Schwarze Linien
+                gl_FragColor = vec4(0.7, 0.0, 0.0, 1.0);
+            } else {
+                // Streifen in Y-Richtung
+                float stripe = step(0.5, mod(abs(vNormal.y) * 3.0, 1.0));
+                vec3 color = mix(vec3(1.0, 0.0, 0.0), vec3(1.0, 1.0, 0.0), stripe);
+                gl_FragColor = vec4(color, 1.0);
+            }
         }
     </script>
+
 </head>
 
 <body onload="app.start()">
@@ -133,8 +152,11 @@
         </ul>
 
         <h3>Rekursionstiefe</h2>
-            <button onclick="app.changeOktaederDepth(-1)">Rekursion verringern</button>
-            <button onclick="app.changeOktaederDepth(1)">Rekursion erhöhen</button>
+            <button onclick="app.changeOktaederDepth(1)">+</button>
+            <button onclick="app.changeOktaederDepth(-1)">-</button>
+            <button onclick="app.toggleOktaederLines()">Linien An/Aus</button>
+
+
     </div>
 </body>
 
