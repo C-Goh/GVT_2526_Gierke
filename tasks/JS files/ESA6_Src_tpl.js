@@ -135,14 +135,14 @@ var app = ( function() {
         createModel("torus", fs, [0, 0, 0], [0, 0, 0], [1, 1, 1]);
         createModel("plane", "wireframe",  [0, -.8, 0], [0, 0, 0], 
             [1, 1, 1]);
-        createModel("sphere", fs, [1, -.3, -1], [0, 0, 0], 
-            [.5, .5, .5]);
+        createModel("sphere", fs, [1, 0.3, -1], [0, 0, 0], 
+            [.4, .4, .4]);
         createModel("sphere", fs, [-1, -.3, -1], [0, 0, 0], 
-            [.5, .5, .5]);
+            [.4, .4, .4]);
         createModel("sphere", fs, [1, -.3, 1], [0, 0, 0], 
-            [.5, .5, .5]);
-        createModel("sphere", fs, [-1, -.3, 1], [0, 0, 0], 
-            [.5, .5, .5]);
+            [.4, .4, .4]);
+        createModel("sphere", fs, [-1, 0.3, 1], [0, 0, 0], 
+            [.4, .4, .4]);
     
         // Select one model that can be manipulated interactively by user.
         interactiveModel = models[0];
