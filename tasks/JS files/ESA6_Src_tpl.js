@@ -135,6 +135,7 @@ var app = (function () {
 		// fillstyle
 		var fs = "fillwireframe";
 		createModel("torus", fs, [0, 0, 0], [0, 0, 0], [1, 1, 1]);
+		models[models.length - 1].geometry = "torus"; // <--- diese Zeile ergänzt!
 		createModel("plane", "wireframe", [0, -.8, 0], [0, 0, 0],
 			[1, 1, 1]);
 
@@ -311,6 +312,18 @@ var app = (function () {
 		}
 	}
 
+	function rotateTorus(timeSec) {
+		for (var i = 0; i < models.length; i++) {
+			var m = models[i];
+			// Prüfen, ob es das Torus-Modell ist
+			if (m.geometry && m.geometry === "torus") {
+				// Rotation um die Y-Achse
+				m.rotate[1] = timeSec * 1.8; // 0.5 = Rotationsgeschwindigkeit (rad/s)
+			}
+		}
+	}
+
+
 	/**
 	 * Run the rendering pipeline.
 	 */
@@ -371,25 +384,27 @@ var app = (function () {
 	 * Update model-view matrix for model.
 	 */
 	function updateTransformations(model) {
-
-		// Use shortcut variables.
 		var mMatrix = model.mMatrix;
 		var mvMatrix = model.mvMatrix;
 
-		// Reset matrices to identity.         
 		mat4.identity(mMatrix);
 		mat4.identity(mvMatrix);
 
-		// Translate.
+		// Translation
 		mat4.translate(mMatrix, mMatrix, model.translate);
 
-		// Scale
+		// Rotation um X, Y, Z
+		mat4.rotateX(mMatrix, mMatrix, model.rotate[0]);
+		mat4.rotateY(mMatrix, mMatrix, model.rotate[1]);
+		mat4.rotateZ(mMatrix, mMatrix, model.rotate[2]);
+
+		// Skalierung
 		mat4.scale(mMatrix, mMatrix, model.scale);
 
-		// Combine view and model matrix
-		// by matrix multiplication to mvMatrix.        
+		// View * Model
 		mat4.multiply(mvMatrix, camera.vMatrix, mMatrix);
 	}
+
 
 	function draw(model) {
 		// Setup position VBO.
@@ -424,9 +439,11 @@ var app = (function () {
 	function animate(timeMs) {
 		var t = timeMs ? timeMs * 0.001 : 0;
 		updateSpherePositions(t);
+		rotateTorus(t);
 		render();
 		requestAnimationFrame(animate);
 	}
+
 
 
 	// App interface.
