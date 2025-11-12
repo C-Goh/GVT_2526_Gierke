@@ -9,6 +9,12 @@ var app = (function () {
 	// Array of model objects.
 	var models = [];
 
+	var torusRotationY = 0; // aktuelle Rotation des Torus um Y-Achse
+
+	var isAnimating = true; // Steuerung für Start/Stopp
+	var pauseTime = 0;       // Zeitpunkt des Pausierens
+	var timeOffset = 0;      // Zeitverschiebung, um Sprünge zu vermeiden
+
 	// Model that is target for user input.
 	var interactiveModel;
 
@@ -140,20 +146,22 @@ var app = (function () {
 			[1, 1, 1]);
 
 		// === Kugeln, die durch das Loch des Torus fliegen ===
-		var sphereScale = [0.25, 0.25, 0.25];
+		var sphereScale = [0.15, 0.15, 0.15];  // kleiner, mehr Abstand zur Innenwand
 		var count = 4;
-		var sharedSpeed = 0.8; // alle Kugeln gleich schnell
+		var sharedSpeed = 0.8; // gleiche Geschwindigkeit
 
 		for (var k = 0; k < count; k++) {
 			createModel("sphere", "fillwireframe", [0, 0, 0], [0, 0, 0], sphereScale);
 			var m = models[models.length - 1];
 			m.geometry = "sphere";
 			m.path = {
-				radius: 0.9,                // Kreisbahn durch das Torus-Loch
-				phase: (2 * Math.PI * k) / count, // gleichmäßig verteilt
-				speed: sharedSpeed          // alle gleiche Geschwindigkeit
+				radius: 0.6,                // kleinerer Radius → innerhalb des Lochs
+				phase: (2 * Math.PI * k) / count,
+				speed: sharedSpeed
 			};
 		}
+
+
 
 		// Select one model that can be manipulated interactively by user.
 		interactiveModel = models[0];
@@ -248,6 +256,21 @@ var app = (function () {
 			// Use shift key to change sign.
 			var sign = evt.shiftKey ? -1 : 1;
 
+			switch (c) {
+				// ...
+				case ('K'):
+					if (isAnimating) {
+						// Pausieren
+						pauseTime = performance.now() * 0.001; // Sekunden speichern
+						isAnimating = false;
+					} else {
+						// Fortsetzen → Zeitversatz anpassen
+						var resumeTime = performance.now() * 0.001;
+						timeOffset += resumeTime - pauseTime;
+						isAnimating = true;
+					}
+					break;
+			}
 			// Change projection of scene.
 			switch (c) {
 				case ('O'):
@@ -291,7 +314,7 @@ var app = (function () {
 	}
 
 	function updateSpherePositions(timeSec) {
-		var R = 0.9; // Radius der Kreisbahn
+		var R = 1.0; // Radius der Kreisbahn
 		var xOffset = 0.9;
 		var yOffset = 0.0;
 		var zOffset = 0.0;
@@ -301,9 +324,13 @@ var app = (function () {
 			if (m.geometry && m.geometry === "sphere" && m.path) {
 				var v = m.path.speed * timeSec + m.path.phase;
 
-				var x = R * Math.cos(v) + xOffset;
+				// Kugelbahn an Torus-Rotation koppeln (dreht sich mit)
+				var angle = v + torusRotationY;
+
+				var x = R * Math.cos(angle) + xOffset;
 				var y = yOffset;
-				var z = R * Math.sin(v) + zOffset;
+				var z = R * Math.sin(angle) + zOffset;
+
 
 				m.translate[0] = x;
 				m.translate[1] = y;
@@ -318,7 +345,9 @@ var app = (function () {
 			// Prüfen, ob es das Torus-Modell ist
 			if (m.geometry && m.geometry === "torus") {
 				// Rotation um die Y-Achse
-				m.rotate[1] = timeSec * 1.8; // 0.5 = Rotationsgeschwindigkeit (rad/s)
+				torusRotationY = timeSec * 1.3; // speichern, damit Kugeln mitdrehen
+				m.rotate[1] = torusRotationY;
+
 			}
 		}
 	}
@@ -437,12 +466,21 @@ var app = (function () {
 	}
 
 	function animate(timeMs) {
+		// Zeit in Sekunden
 		var t = timeMs ? timeMs * 0.001 : 0;
-		updateSpherePositions(t);
-		rotateTorus(t);
+
+		// Wenn pausiert wurde, Zeitversatz berücksichtigen
+		var adjustedTime = t - timeOffset;
+
+		if (isAnimating) {
+			updateSpherePositions(adjustedTime);
+			rotateTorus(adjustedTime);
+		}
+
 		render();
 		requestAnimationFrame(animate);
 	}
+
 
 
 
