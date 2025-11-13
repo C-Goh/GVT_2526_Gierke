@@ -313,44 +313,49 @@ var app = (function () {
 		};
 	}
 
-	function updateSpherePositions(timeSec) {
-		var R = 1.0; // Radius der Kreisbahn
-		var xOffset = 0.9;
-		var yOffset = 0.0;
-		var zOffset = 0.0;
+function updateSpherePositions(timeSec) {
+    var R = 0.4;     // Radius der Kugelbahn im Loch
+    var xOffset = 0; // Bahn zentriert im Torushh
+    var yOffset = 0;
+    var zOffset = 0;
 
-		for (var i = 0; i < models.length; i++) {
-			var m = models[i];
-			if (m.geometry && m.geometry === "sphere" && m.path) {
-				var v = m.path.speed * timeSec + m.path.phase;
+    for (var i = 0; i < models.length; i++) {
+        var m = models[i];
+        if (m.geometry && m.geometry === "sphere" && m.path) {
+            var localAngle = m.path.speed * timeSec + m.path.phase;
 
-				// Kugelbahn an Torus-Rotation koppeln (dreht sich mit)
-				var angle = v + torusRotationY;
+            var localX = R * Math.cos(localAngle);
+            var localY = yOffset;
+            var localZ = R * Math.sin(localAngle);
 
-				var x = R * Math.cos(angle) + xOffset;
-				var y = yOffset;
-				var z = R * Math.sin(angle) + zOffset;
+            var cosY = Math.cos(torusRotationY);
+            var sinY = Math.sin(torusRotationY);
 
+            var worldX = localX * cosY - localZ * sinY;
+            var worldZ = localX * sinY + localZ * cosY;
 
-				m.translate[0] = x;
-				m.translate[1] = y;
-				m.translate[2] = z;
-			}
-		}
-	}
+            m.translate[0] = worldX;
+            m.translate[1] = localY;
+            m.translate[2] = worldZ;
+        }
+    }
+}
+
 
 	function rotateTorus(timeSec) {
+		var rotationSpeed = 0.4; // Rotationsgeschwindigkeit (rad/s)
+
 		for (var i = 0; i < models.length; i++) {
 			var m = models[i];
-			// Prüfen, ob es das Torus-Modell ist
 			if (m.geometry && m.geometry === "torus") {
-				// Rotation um die Y-Achse
-				torusRotationY = timeSec * 1.3; // speichern, damit Kugeln mitdrehen
+				// Torus dreht sich gleichmäßig um Y-Achse
+				torusRotationY = timeSec * rotationSpeed;
 				m.rotate[1] = torusRotationY;
-
 			}
 		}
 	}
+
+
 
 
 	/**
