@@ -138,9 +138,13 @@ var app = (function () {
 		// fillstyle
 		var fs = "fillwireframe";
 		createModel("plane", fs, [1, 1, 1, 1], [0, 0, 0], [0, 0, 0], [1, 1, 1]);
+		createModel("torus", fs, [0, 0, 0, 1], [0, 1.3, 2], [0, 0, 0], [1, 1, 1]);
+		createModel("torus", fs, [0, 0, 0, 1], [0, 1, 2], [0, 0, 0], [0.4, 0.4, 0.4]);
+		createModel("sphere", fs, [0, -0.5, 0], [0, 0, 0], [.7, .7, .7], [1, 1, 1]);
 
-			// Select one model that can be manipulated interactively by user.
-			interactiveModel = models[0];
+
+		// Select one model that can be manipulated interactively by user.
+		interactiveModel = models[0];
 	}
 
 	/**
