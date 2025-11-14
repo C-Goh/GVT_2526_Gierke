@@ -138,9 +138,9 @@ var app = (function () {
 		// fillstyle
 		var fs = "fillwireframe";
 		createModel("plane", fs, [1, 1, 1, 1], [0, 0, 0], [0, 0, 0], [1, 1, 1]);
-		createModel("torus", fs, [0, 0, 0, 1], [0, 1.3, 2], [0, 0, 0], [1, 1, 1]);
-		createModel("torus", fs, [0, 0, 0, 1], [0, 1, 2], [0, 0, 0], [0.4, 0.4, 0.4]);
-		createModel("sphere", fs, [0, -0.5, 0], [0, 0, 0], [.7, .7, .7], [1, 1, 1]);
+		createModel("torus", fs, [0, 0, 0, 1], [0, 1, 1], [0, 0, 0], [1.5, 1, 1]);
+		createModel("torus", fs, [0, 0, 0, 1], [0, 1, 2.5], [0, 0, 0], [0.4, 0.4, 0.4]);
+		createModel("sphere", fs, [0, -0.5, 0], [0, 1, -1], [.7, .7, .7], [0.3, 0.3, 0.3]);
 
 
 		// Select one model that can be manipulated interactively by user.
@@ -206,8 +206,7 @@ var app = (function () {
 		gl.bindBuffer(gl.ARRAY_BUFFER, model.vboNormal);
 		gl.bufferData(gl.ARRAY_BUFFER, model.normals, gl.STATIC_DRAW);
 		// Bind buffer to attribute variable.
-		prog.normalAttrib = gl.getAttribLocation(prog, 'aNormal');
-		gl.enableVertexAttribArray(prog.normalAttrib);
+
 
 		// Setup lines index buffer object.
 		model.iboLines = gl.createBuffer();
@@ -273,17 +272,13 @@ var app = (function () {
 			}
 			// Camera move and orbit.
 			switch (c) {
-				case ('C'):
+				case ('D'):
 					// Orbit camera.
 					camera.zAngle += sign * deltaRotate;
 					break;
 				case ('H'):
 					// Move camera up and down.
 					camera.eye[1] += sign * deltaTranslate;
-					break;
-				case ('D'):
-					// Camera distance to center.
-					camera.distance += sign * deltaTranslate;
 					break;
 				case ('V'):
 					// Camera fovy in radian.
@@ -391,8 +386,8 @@ var app = (function () {
 		gl.vertexAttribPointer(prog.positionAttrib, 3, gl.FLOAT, false, 0, 0);
 
 		// Setup normal VBO.
-		gl.bindBuffer(gl.ARRAY_BUFFER, model.vboNormal);
-		gl.vertexAttribPointer(prog.normalAttrib, 3, gl.FLOAT, false, 0, 0);
+		//gl.bindBuffer(gl.ARRAY_BUFFER, model.vboNormal);
+		//gl.vertexAttribPointer(prog.normalAttrib, 3, gl.FLOAT, false, 0, 0);
 
 		// Setup rendering tris.
 		var fill = (model.fillstyle.search(/fill/) != -1);
@@ -406,7 +401,7 @@ var app = (function () {
 		var wireframe = (model.fillstyle.search(/wireframe/) != -1);
 		if (wireframe) {
 			gl.uniform4fv(prog.colorUniform, [0., 0., 0., 1.]);
-			gl.disableVertexAttribArray(prog.normalAttrib);
+			//gl.disableVertexAttribArray(prog.normalAttrib);
 			gl.vertexAttrib3f(prog.normalAttrib, 0, 0, 0);
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.iboLines);
 			gl.drawElements(gl.LINES, model.iboLines.numberOfElements, gl.UNSIGNED_SHORT, 0);

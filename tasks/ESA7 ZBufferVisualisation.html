@@ -1,49 +1,138 @@
 <!DOCTYPE html5>
 <html>
-
 <head>
+    	<title>ESA 7 - Z-Buffer Visualisation</title>
+
+    	<style>
+		body {
+			margin: 0;
+			height: 100vh;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			background-color: #2b2b2b;
+			/* dunkelgrauer Hintergrund */
+			color: white;
+			font-family: Arial, sans-serif;
+		}
+
+		#canvas {
+			max-width: 70%;
+			margin-left: 200px;
+			background-color: #111;
+		}
+
+		#controls {
+			width: 35%;
+			margin-right: 200px;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: left;
+			gap: 20px;
+			padding: 20px;
+			background-color: #3a3a3a;
+			border-left: 2px solid #555;
+			border-radius: 12px 0 0 12px;
+			box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
+		}
+
+		ul {
+			display: block;
+			margin-block-start: 1em;
+			margin-block-end: 1em;
+			padding-inline-start: 40px;
+			unicode-bidi: isolate;
+		}
+
+		button {
+			width: 80%;
+			padding: 12px;
+			font-size: 16px;
+			color: #fff;
+			background-color: #555;
+			border: none;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: background 0.3s;
+		}
+
+		button:hover {
+			background-color: #777;
+		}
+
+		h1 {
+			margin-bottom: 10px;
+		}
+
+		h3 {
+			margin-bottom: 5px;
+		}
+	</style>
+
     <script src="./ext/gl-matrix.js"></script>
+
+    <!-- Shader müssen VOR SHA_Src_tpl.js stehen! -->
+    <script type="x-shader/x-vertex" id="vertexshader">
+        precision mediump float;
+        attribute vec3 aPosition;
+        attribute vec3 aNormal;
+        uniform mat4 uPMatrix;
+        uniform mat4 uMVMatrix;
+        void main() {
+            gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
+        }
+    </script>
+
+<script type="x-shader/x-fragment" id="fragmentshader">
+precision mediump float;
+
+void main() {
+    float z = gl_FragCoord.z;   // 0 = nah, 1 = weit
+    gl_FragColor = vec4(vec3(z), 1.0);
+}
+</script>
+
+    <!-- Jetzt erst die Render-Pipeline laden -->
     <script src="./JS files/GVT_Src_plane.js"></script>
-    <script src="./JS files/SHA_Src_tpl.js"></script>
     <script src="./JS files/GVT_Src_torus.js"></script>
     <script src="./JS files/GVT_Src_vertexData_sphere.js"></script>
-    
-    <script type="x-shader/x-vertex" id="vertexshader">
-	 precision mediump float;
-    
-    attribute vec3 aPosition;
-    attribute vec3 aNormal;
-    
-    uniform mat4 uPMatrix;
-    uniform mat4 uMVMatrix;
-    uniform mat3 uNMatrix;
-    uniform vec4 uColor;
-    
-    varying vec4 vColor;
-    
-    void main(){
-        gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
-
-        // normale verwenden, damit shader sie nicht löscht
-        vec3 tNormal = normalize(uNMatrix * aNormal);
-
-        // ungefähre Farbe → Shader bleibt gültig
-        vColor = uColor;
-    }
-		</script>
-    <script type="x-shader/x-fragment" id="fragmentshader">
-			precision mediump float;
-			varying vec4 vColor;
-			
-			void main() {
-				gl_FragColor = vColor;
-			}
-		</script>
+    <script src="./JS files/SHA_Src_tpl.js"></script>
 </head>
 
 <body onload="app.start()">
-    <p>Hey</p>
     <canvas id="canvas" width="500" height="500"></canvas>
-</body>
+    <div id="controls">
+		<h1>ESA 7 - Z-Buffer Visualisation</h1>
+		<ul>
+			<li>
+				<b>Steuerung:</b> <br>
+				<br>
+				K: Animation stoppen/starten <br>
+				<br>
+				C / Shift C: Kamera Orbit<br>
+				<br>
 
+				H / Shift H: Kamera Höhe<br>
+				<br>
+
+				V / Shift V: Kamera FOV<br>
+				<br>
+
+				D / Shift D: Kamera Distanz<br>
+
+
+			</li>
+			<br>
+			<li>
+				Die Kugeln sollen sich durch den Torus bewegen, ohne sich zu berühren.
+			</li>
+			<br>
+			<li>
+				<b>Quelle:</b>
+				Als Vorlage wurde das Kursmaterial verwendet.
+			</li>
+		</ul>
+    </div>
+</body>
 </html>
