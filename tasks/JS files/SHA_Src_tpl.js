@@ -36,6 +36,9 @@ var app = (function () {
 		zAngle: 0,
 		// Distance in XZ-Plane from center when orbiting.
 		distance: 4,
+		// vertikaler Schwenk (für Pfeiltasten ↑/↓)
+		tiltAngle: 0.25,
+
 	};
 
 	function start() {
@@ -270,25 +273,44 @@ var app = (function () {
 					camera.projectionType = "perspective";
 					break;
 			}
-			// Camera move and orbit.
+			// Kamera in XY-Ebene bewegen (WASD)
+			// Wir ändern camera.center.x für A/D, und für W/S verschieben wir center.y UND eye.y
+			// damit Orbit-Logik (calculateCameraOrbit) die neuen X-Positionen berücksichtigt.
 			switch (c) {
+				case ('W'):
+					camera.center[1] += deltaTranslate; // Blickpunkt nach oben
+					camera.eye[1] += deltaTranslate;    // Kamerahöhe mitziehen
+					break;
+				case ('S'):
+					camera.center[1] -= deltaTranslate;
+					camera.eye[1] -= deltaTranslate;
+					break;
+				case ('A'):
+					// Seitliche Verschiebung: center.x ändern, orbit setzt eye.x relativ dazu
+					camera.center[0] -= deltaTranslate;
+					break;
 				case ('D'):
-					// Orbit camera.
-					camera.zAngle += sign * deltaRotate;
-					break;
-				case ('H'):
-					// Move camera up and down.
-					camera.eye[1] += sign * deltaTranslate;
-					break;
-				case ('V'):
-					// Camera fovy in radian.
-					camera.fovy += sign * 5 * Math.PI / 180;
-					break;
-				case ('B'):
-					// Camera near plane dimensions.
-					camera.lrtb += sign * 0.1;
+					camera.center[0] += deltaTranslate;
 					break;
 			}
+
+			// Szene drehen über Pfeiltasten
+			switch (key) {
+				case 37: // Pfeil links
+					camera.zAngle -= deltaRotate;
+					break;
+				case 39: // Pfeil rechts
+					camera.zAngle += deltaRotate;
+					break;
+				case 38: // Pfeil oben
+					camera.tiltAngle += deltaRotate;
+					break;
+				case 40: // Pfeil unten
+					camera.tiltAngle -= deltaRotate;
+					break;
+			}
+
+
 			// Render the scene again on any key pressed.
 			render();
 		};
@@ -323,13 +345,17 @@ var app = (function () {
 	}
 
 	function calculateCameraOrbit() {
-		// Calculate x,z position/eye of camera orbiting the center.
-		var x = 0, z = 2;
-		camera.eye[x] = camera.center[x];
-		camera.eye[z] = camera.center[z];
-		camera.eye[x] += camera.distance * Math.sin(camera.zAngle);
-		camera.eye[z] += camera.distance * Math.cos(camera.zAngle);
+		// Horizontaler Orbit (links/rechts)
+		camera.eye[0] = camera.center[0] + camera.distance * Math.sin(camera.zAngle);
+		camera.eye[2] = camera.center[2] + camera.distance * Math.cos(camera.zAngle);
+
+		// Vertikaler Orbit (oben/unten)
+		camera.eye[1] = camera.center[1] + camera.distance * Math.sin(camera.tiltAngle);
+
+		// Korrekte Höhe des Look-Points beibehalten
+		camera.up = [0, Math.cos(camera.tiltAngle), 0];
 	}
+
 
 	function setProjection() {
 		// Set projection Matrix.
