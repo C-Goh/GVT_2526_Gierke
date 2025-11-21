@@ -41,12 +41,31 @@ var app = (function() {
     // Objekt with light sources characteristics in the scene.
     var illumination = {
         ambientLight : [ .5, .5, .5 ],
+        // default: one light provided; we will ensure at least two later
         light : [ {
             isOn : true,
             position : [ 3., 1., 3. ],
             color : [ 1., 1., 1. ]
         }, ]
     };
+
+    /**
+     * Ensure at least `n` lights exist in illumination.light.
+     * If missing, push default lights that illuminate the scene from different sides.
+     */
+    function ensureLights(n) {
+        while (illumination.light.length < n) {
+            // Decide defaults depending on current length to place them sensibly.
+            var idx = illumination.light.length;
+            var defaultLight = {
+                isOn: true,
+                position: [ (idx % 2 === 0) ? 3.0 : -3.0, 1.0, (idx % 2 === 0) ? 3.0 : -3.0 ],
+                // Slightly different colors so they provide nice shading contrast:
+                color: (idx === 0) ? [1.0, 1.0, 1.0] : [0.9, 0.85, 0.75]
+            };
+            illumination.light.push(defaultLight);
+        }
+    }
 
     function start() {
         init();
@@ -56,6 +75,11 @@ var app = (function() {
     function init() {
         initWebGL();
         initShaderProgram();
+
+        // Ensure we have at least two lights before creating uniform locations,
+        // as the shader expects an array of light uniforms.
+        ensureLights(2);
+
         initUniforms();
         initModels();
         initEventHandler();
