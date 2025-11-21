@@ -1,4 +1,4 @@
-var app = (function() {
+var app = (function () {
 
     var gl;
 
@@ -14,39 +14,45 @@ var app = (function() {
 
     var camera = {
         // Initial position of the camera.
-        eye : [ 0, 1, 4 ],
+        eye: [0, 1, 4],
         // Point to look at.
-        center : [ 0, 0, 0 ],
+        center: [0, 0, 0],
         // Roll and pitch of the camera.
-        up : [ 0, 1, 0 ],
+        up: [0, 1, 0],
         // Opening angle given in radian.
         // radian = degree*2*PI/360.
-        fovy : 60.0 * Math.PI / 180,
+        fovy: 60.0 * Math.PI / 180,
         // Camera near plane dimensions:
         // value for left right top bottom in projection.
-        lrtb : 2.0,
+        lrtb: 2.0,
         // View matrix.
-        vMatrix : mat4.create(),
+        vMatrix: mat4.create(),
         // Projection matrix.
-        pMatrix : mat4.create(),
+        pMatrix: mat4.create(),
         // Projection types: ortho, perspective, frustum.
-        projectionType : "perspective",
+        projectionType: "perspective",
         // Angle to Z-Axis for camera when orbiting the center
         // given in radian.
-        zAngle : 0,
+        zAngle: 0,
         // Distance in XZ-Plane from center when orbiting.
-        distance : 4,
+        distance: 4,
     };
+
+    // Light orbit angles (for 2 lights)
+    var lightAngle = [0, Math.PI];
+    var lightOrbitRadius = 4.0;     // Radius der Kreisbahn
+    var lightOrbitHeight = 2.0;     // Y-Höhe der Lichter
+    var lightStep = 0.1;            // Schrittweite pro Tastendruck
 
     // Objekt with light sources characteristics in the scene.
     var illumination = {
-        ambientLight : [ .5, .5, .5 ],
+        ambientLight: [.5, .5, .5],
         // default: one light provided; we will ensure at least two later
-        light : [ {
-            isOn : true,
-            position : [ 3., 1., 3. ],
-            color : [ 1., 1., 1. ]
-        }, ]
+        light: [{
+            isOn: true,
+            position: [3., 1., 3.],
+            color: [1., 1., 1.]
+        },]
     };
 
     /**
@@ -59,7 +65,7 @@ var app = (function() {
             var idx = illumination.light.length;
             var defaultLight = {
                 isOn: true,
-                position: [ (idx % 2 === 0) ? 3.0 : -3.0, 1.0, (idx % 2 === 0) ? 3.0 : -3.0 ],
+                position: [(idx % 2 === 0) ? 3.0 : -3.0, 1.0, (idx % 2 === 0) ? 3.0 : -3.0],
                 // Slightly different colors so they provide nice shading contrast:
                 color: (idx === 0) ? [1.0, 1.0, 1.0] : [0.9, 0.85, 0.75]
             };
@@ -169,7 +175,7 @@ var app = (function() {
 
         // Light.
         prog.ambientLightUniform = gl.getUniformLocation(prog,
-                "ambientLight");
+            "ambientLight");
         // Array for light sources uniforms.
         prog.lightUniform = [];
         // Loop over light sources.
@@ -198,9 +204,9 @@ var app = (function() {
         material = material || {};
         // Set some default values,
         // if not defined in material paramter.
-        material.ka = material.ka || [ 0.3, 0.3, 0.3 ];
-        material.kd = material.kd || [ 0.6, 0.6, 0.6 ];
-        material.ks = material.ks || [ 0.8, 0.8, 0.8 ];
+        material.ka = material.ka || [0.3, 0.3, 0.3];
+        material.kd = material.kd || [0.6, 0.6, 0.6];
+        material.ks = material.ks || [0.8, 0.8, 0.8];
         material.ke = material.ke || 10.;
 
         return material;
@@ -213,14 +219,14 @@ var app = (function() {
         // Create some default material.
         var mDefault = createPhongMaterial();
 
-        createModel("torus", fs, [ 1, 1, 1, 1 ], [ 0, .75, 0 ],
-                [ 0, 0, 0, 0 ], [ 1, 1, 1, 1 ], mDefault);
-        createModel("sphere", fs, [ 1, 1, 1, 1 ], [ -1.25, .5, 0 ], [ 0, 0,
-                0, 0 ], [ .5, .5, .5 ], mDefault);
-        createModel("sphere", fs, [ 1, 1, 1, 1 ], [ 1.25, .5, 0 ], [ 0, 0,
-                0, 0 ], [ .5, .5, .5 ], mDefault);
-        createModel("plane", fs, [ 1, 1, 1, 1 ], [ 0, 0, 0, 0 ], [ 0, 0, 0,
-                0 ], [ 1, 1, 1, 1 ], mDefault);
+        createModel("torus", fs, [1, 1, 1, 1], [0, .75, 0],
+            [0, 0, 0, 0], [1, 1, 1, 1], mDefault);
+        createModel("sphere", fs, [1, 1, 1, 1], [-1.25, .5, 0], [0, 0,
+            0, 0], [.5, .5, .5], mDefault);
+        createModel("sphere", fs, [1, 1, 1, 1], [1.25, .5, 0], [0, 0,
+            0, 0], [.5, .5, .5], mDefault);
+        createModel("plane", fs, [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0,
+            0], [1, 1, 1, 1], mDefault);
 
         // Select one model that can be manipulated interactively by user.
         interactiveModel = models[0];
@@ -233,7 +239,7 @@ var app = (function() {
      * @parameter fillstyle: wireframe, fill, fillwireframe.
      */
     function createModel(geometryname, fillstyle, color, translate, rotate,
-            scale, material) {
+        scale, material) {
         var model = {};
         model.fillstyle = fillstyle;
         model.color = color;
@@ -296,7 +302,7 @@ var app = (function() {
         model.iboLines = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.iboLines);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, model.indicesLines,
-                gl.STATIC_DRAW);
+            gl.STATIC_DRAW);
         model.iboLines.numberOfElements = model.indicesLines.length;
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
@@ -304,9 +310,18 @@ var app = (function() {
         model.iboTris = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.iboTris);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, model.indicesTris,
-                gl.STATIC_DRAW);
+            gl.STATIC_DRAW);
         model.iboTris.numberOfElements = model.indicesTris.length;
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    }
+
+    function updateLightPositions() {
+        for (let i = 0; i < 2; i++) {
+            // Kreisbahn in XZ-Ebene
+            illumination.light[i].position[0] = lightOrbitRadius * Math.cos(lightAngle[i]);
+            illumination.light[i].position[2] = lightOrbitRadius * Math.sin(lightAngle[i]);
+            illumination.light[i].position[1] = lightOrbitHeight;
+        }
     }
 
     function initEventHandler() {
@@ -315,7 +330,7 @@ var app = (function() {
         var deltaTranslate = 0.05;
         var deltaScale = 0.05;
 
-        window.onkeydown = function(evt) {
+        window.onkeydown = function (evt) {
             var key = evt.which ? evt.which : evt.keyCode;
             var c = String.fromCharCode(key);
             // console.log(evt);
@@ -323,60 +338,74 @@ var app = (function() {
             var sign = evt.shiftKey ? -1 : 1;
             // Rotate interactiveModel.
             switch (c) {
-            case ('X'):
-                interactiveModel.rotate[0] += sign * deltaRotate;
-                break;
-            case ('Y'):
-                interactiveModel.rotate[1] += sign * deltaRotate;
-                break;
-            case ('Z'):
-                interactiveModel.rotate[2] += sign * deltaRotate;
-                break;
+                case ('X'):
+                    interactiveModel.rotate[0] += sign * deltaRotate;
+                    break;
+                case ('Y'):
+                    interactiveModel.rotate[1] += sign * deltaRotate;
+                    break;
+                case ('Z'):
+                    interactiveModel.rotate[2] += sign * deltaRotate;
+                    break;
             }
             // Scale/squeese interactiveModel.
             switch (c) {
-            case ('S'):
-                interactiveModel.scale[0] *= 1 + sign * deltaScale;
-                interactiveModel.scale[1] *= 1 - sign * deltaScale;
-                interactiveModel.scale[2] *= 1 + sign * deltaScale;
-                break;
+                case ('S'):
+                    interactiveModel.scale[0] *= 1 + sign * deltaScale;
+                    interactiveModel.scale[1] *= 1 - sign * deltaScale;
+                    interactiveModel.scale[2] *= 1 + sign * deltaScale;
+                    break;
             }
+
+
             // Change projection of scene.
             switch (c) {
-            case ('O'):
-                camera.projectionType = "ortho";
-                camera.lrtb = 2;
-                break;
-            case ('F'):
-                camera.projectionType = "frustum";
-                camera.lrtb = 1.2;
-                break;
-            case ('P'):
-                camera.projectionType = "perspective";
-                break;
+                case ('O'):
+                    camera.projectionType = "ortho";
+                    camera.lrtb = 2;
+                    break;
+                case ('F'):
+                    camera.projectionType = "frustum";
+                    camera.lrtb = 1.2;
+                    break;
+                case ('P'):
+                    camera.projectionType = "perspective";
+                    break;
             }
             // Camera move and orbit.
             switch (c) {
-            case ('C'):
-                // Orbit camera.
-                camera.zAngle += sign * deltaRotate;
-                break;
-            case ('H'):
-                // Move camera up and down.
-                camera.eye[1] += sign * deltaTranslate;
-                break;
-            case ('D'):
-                // Camera distance to center.
-                camera.distance += sign * deltaTranslate;
-                break;
-            case ('V'):
-                // Camera fovy in radian.
-                camera.fovy += sign * 5 * Math.PI / 180;
-                break;
-            case ('B'):
-                // Camera near plane dimensions.
-                camera.lrtb += sign * 0.1;
-                break;
+                case ('L'):
+                case ('l'):
+                    // Erhöhe die Winkel der beiden Lichter
+                    lightAngle[0] += lightStep;
+                    lightAngle[1] += lightStep;
+
+                    // Aktualisiere Positionen
+                    updateLightPositions();
+
+                    // Neu rendern
+                    render();
+                    break;
+                case ('C'):
+                    // Orbit camera.
+                    camera.zAngle += sign * deltaRotate;
+                    break;
+                case ('H'):
+                    // Move camera up and down.
+                    camera.eye[1] += sign * deltaTranslate;
+                    break;
+                case ('D'):
+                    // Camera distance to center.
+                    camera.distance += sign * deltaTranslate;
+                    break;
+                case ('V'):
+                    // Camera fovy in radian.
+                    camera.fovy += sign * 5 * Math.PI / 180;
+                    break;
+                case ('B'):
+                    // Camera near plane dimensions.
+                    camera.lrtb += sign * 0.1;
+                    break;
             }
             // Render the scene again on any key pressed.
             render();
@@ -404,7 +433,7 @@ var app = (function() {
         for (var j = 0; j < illumination.light.length; j++) {
             // bool is transferred as integer.
             gl.uniform1i(prog.lightUniform[j].isOn,
-                    illumination.light[j].isOn);
+                illumination.light[j].isOn);
             // Tranform light postion in eye coordinates.
             // Copy current light position into a new array.
             var lightPos = [].concat(illumination.light[j].position);
@@ -415,7 +444,7 @@ var app = (function() {
             lightPos.pop();
             gl.uniform3fv(prog.lightUniform[j].position, lightPos);
             gl.uniform3fv(prog.lightUniform[j].color,
-                    illumination.light[j].color);
+                illumination.light[j].color);
         }
 
         // Loop over models.
@@ -427,9 +456,9 @@ var app = (function() {
             //
             // Transformation matrices.
             gl.uniformMatrix4fv(prog.mvMatrixUniform, false,
-                    models[i].mvMatrix);
+                models[i].mvMatrix);
             gl.uniformMatrix3fv(prog.nMatrixUniform, false,
-                    models[i].nMatrix);
+                models[i].nMatrix);
             // Color (not used with lights).
             gl.uniform4fv(prog.colorUniform, models[i].color);
             // NEW
@@ -455,19 +484,19 @@ var app = (function() {
     function setProjection() {
         // Set projection Matrix.
         switch (camera.projectionType) {
-        case ("ortho"):
-            var v = camera.lrtb;
-            mat4.ortho(camera.pMatrix, -v, v, -v, v, -10, 100);
-            break;
-        case ("frustum"):
-            var v = camera.lrtb;
-            mat4.frustum(camera.pMatrix, -v / 2, v / 2, -v / 2, v / 2,
+            case ("ortho"):
+                var v = camera.lrtb;
+                mat4.ortho(camera.pMatrix, -v, v, -v, v, -10, 100);
+                break;
+            case ("frustum"):
+                var v = camera.lrtb;
+                mat4.frustum(camera.pMatrix, -v / 2, v / 2, -v / 2, v / 2,
                     1, 10);
-            break;
-        case ("perspective"):
-            mat4.perspective(camera.pMatrix, camera.fovy, camera.aspect, 1,
+                break;
+            case ("perspective"):
+                mat4.perspective(camera.pMatrix, camera.fovy, camera.aspect, 1,
                     10);
-            break;
+                break;
         }
         // Set projection uniform.
         gl.uniformMatrix4fv(prog.pMatrixUniform, false, camera.pMatrix);
@@ -507,7 +536,7 @@ var app = (function() {
         // Setup position VBO.
         gl.bindBuffer(gl.ARRAY_BUFFER, model.vboPos);
         gl.vertexAttribPointer(prog.positionAttrib, 3, gl.FLOAT,
-                    false, 0, 0);
+            false, 0, 0);
 
         // Setup normal VBO.
         gl.bindBuffer(gl.ARRAY_BUFFER, model.vboNormal);
@@ -519,24 +548,24 @@ var app = (function() {
             gl.enableVertexAttribArray(prog.normalAttrib);
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.iboTris);
             gl.drawElements(gl.TRIANGLES, model.iboTris.numberOfElements,
-                    gl.UNSIGNED_SHORT, 0);
+                gl.UNSIGNED_SHORT, 0);
         }
 
         // Setup rendering lines.
         var wireframe = (model.fillstyle.search(/wireframe/) != -1);
         if (wireframe) {
-            gl.uniform4fv(prog.colorUniform, [ 0., 0., 0., 1. ]);
+            gl.uniform4fv(prog.colorUniform, [0., 0., 0., 1.]);
             gl.disableVertexAttribArray(prog.normalAttrib);
             gl.vertexAttrib3f(prog.normalAttrib, 0, 0, 0);
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.iboLines);
             gl.drawElements(gl.LINES, model.iboLines.numberOfElements,
-                    gl.UNSIGNED_SHORT, 0);
+                gl.UNSIGNED_SHORT, 0);
         }
     }
 
     // App interface.
     return {
-        start : start
+        start: start
     };
 
 }());
