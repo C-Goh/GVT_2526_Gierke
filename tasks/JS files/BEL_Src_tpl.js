@@ -202,35 +202,55 @@ var app = (function () {
      */
     function createPhongMaterial(material) {
         material = material || {};
-        // Set some default values,
-        // if not defined in material paramter.
+
         material.ka = material.ka || [0.3, 0.3, 0.3];
         material.kd = material.kd || [0.6, 0.6, 0.6];
         material.ks = material.ks || [0.8, 0.8, 0.8];
-        material.ke = material.ke || 10.;
+        material.ke = material.ke || 10.0;
 
         return material;
     }
 
+
     function initModels() {
-        // fillstyle
-        var fs = "fill";
+    var fs = "fill";
 
-        // Create some default material.
-        var mDefault = createPhongMaterial();
+    // Materialfarben
+    var mYellow = createPhongMaterial({
+        ka: [1.0, 1.0, 0.0],
+        kd: [1.0, 1.0, 0.0],
+        ks: [0.5, 0.5, 0.0]
+    });
 
-        createModel("torus", fs, [1, 1, 1, 1], [0, .75, 0],
-            [0, 0, 0, 0], [1, 1, 1, 1], mDefault);
-        createModel("sphere", fs, [1, 1, 1, 1], [-1.25, .5, 0], [0, 0,
-            0, 0], [.5, .5, .5], mDefault);
-        createModel("sphere", fs, [1, 1, 1, 1], [1.25, .5, 0], [0, 0,
-            0, 0], [.5, .5, .5], mDefault);
-        createModel("plane", fs, [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0,
-            0], [1, 1, 1, 1], mDefault);
+    var mRed = createPhongMaterial({
+        ka: [1.0, 0.0, 0.0],
+        kd: [1.0, 0.0, 0.0],
+        ks: [0.5, 0.0, 0.0]
+    });
 
-        // Select one model that can be manipulated interactively by user.
-        interactiveModel = models[0];
-    }
+    var mBlue = createPhongMaterial({
+        ka: [0.0, 0.0, 1.0],
+        kd: [0.0, 0.0, 1.0],
+        ks: [0.0, 0.0, 0.5]
+    });
+
+    var mDefault = createPhongMaterial();
+
+    createModel("torus", fs, [1, 1, 1, 1], [0, 0.75, 0],
+        [0, 0, 0, 0], [1, 1, 1, 1], mYellow);
+
+    createModel("sphere", fs, [1, 1, 1, 1], [-1.25, 0.5, 0],
+        [0, 0, 0, 0], [0.5, 0.5, 0.5], mRed);
+
+    createModel("sphere", fs, [1, 1, 1, 1], [1.25, 0.5, 0],
+        [0, 0, 0, 0], [0.5, 0.5, 0.5], mBlue);
+
+    createModel("plane", fs, [1, 1, 1, 1], [0, 0, 0], [0, 0, 0],
+        [1, 1, 1], mDefault);
+
+    interactiveModel = models[0];
+}
+
 
     /**
      * Create model object, fill it and push it in models array.
