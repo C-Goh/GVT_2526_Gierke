@@ -1,176 +1,144 @@
-<!DOCTYPE html5>
+<!DOCTYPE html>
 <html>
-
 <head>
-    	<style>
-		body {
-			margin: 0;
-			height: 100vh;
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			background-color: #2b2b2b;
-			/* dunkelgrauer Hintergrund */
-			color: white;
-			font-family: Arial, sans-serif;
-		}
-
-		#canvas {
-			max-width: 70%;
-			margin-left: 200px;
-			background-color: #111;
-		}
-
-		#controls {
-			width: 35%;
-			margin-right: 200px;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			align-items: left;
-			gap: 20px;
-			padding: 20px;
-			background-color: #3a3a3a;
-			border-left: 2px solid #555;
-			border-radius: 12px 0 0 12px;
-			box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
-		}
-
-		ul {
-			display: block;
-			margin-block-start: 1em;
-			margin-block-end: 1em;
-			padding-inline-start: 40px;
-			unicode-bidi: isolate;
-		}
-
-		button {
-			width: 80%;
-			padding: 12px;
-			font-size: 16px;
-			color: #fff;
-			background-color: #555;
-			border: none;
-			border-radius: 8px;
-			cursor: pointer;
-			transition: background 0.3s;
-		}
-
-		button:hover {
-			background-color: #777;
-		}
-
-		h1 {
-			margin-bottom: 10px;
-		}
-
-		h3 {
-			margin-bottom: 5px;
-		}
-	</style>
+    <meta charset="utf-8" />
+    <title>ESA8 - Lichter auf einer Kreisbahn</title>
+    <style>
+        body { margin: 0; height: 100vh; display: flex; justify-content: space-between; align-items: center; background-color: #2b2b2b; color: white; font-family: Arial, sans-serif; }
+        #canvas { max-width: 70%; margin-left: 200px; background-color: #111; }
+        #controls { width: 35%; margin-right: 200px; display: flex; flex-direction: column; justify-content: center; align-items: left; gap: 20px; padding: 20px; background-color: #3a3a3a; border-left: 2px solid #555; border-radius: 12px 0 0 12px; box-shadow: -2px 0 10px rgba(0,0,0,0.5); }
+        button { width: 80%; padding: 12px; font-size: 16px; color: #fff; background-color: #555; border: none; border-radius: 8px; cursor: pointer; transition: background 0.3s; }
+        button:hover { background-color: #777; }
+        h1 { margin-bottom: 10px; }
+    </style>
 
     <script src="./ext/gl-matrix.js"></script>
     <script src="./JS files/GVT_Src_vertexData_plane.js"></script>
     <script src="./JS files/GVT_Src_vertexData_sphere.js"></script>
     <script src="./JS files/GVT_Src_torus.js"></script>
     <script src="./JS files/BEL_Src_tpl.js"></script>
-    <script type="x-shader/x-vertex" id="vertexshader">
-	attribute vec3 aPosition;
-	attribute vec3 aNormal;
-	
-	uniform mat4 uPMatrix;
-	uniform mat4 uMVMatrix;
-	uniform mat3 uNMatrix;
-	
-	//uniform vec4 uColor;
-	varying vec4 vColor;
-				
-	// Ambient light.
-	uniform vec3 ambientLight;
-	
-	// Pointlights.
-	const int MAX_LIGHT_SOURCES = 8;
-	struct LightSource {
-		bool isOn;
-		vec3 position;
-		vec3 color;
-	};
-	uniform LightSource light[MAX_LIGHT_SOURCES];
-	
-	// Material.
-	struct PhongMaterial {
-		vec3 ka;
-		vec3 kd;
-		vec3 ks;
-		float ke; 
-	};
-	uniform PhongMaterial material;
-	
-	// Phong illumination for single light source.
-	vec3 phong(vec3 p, vec3 n, vec3 v, LightSource l) {
-		// Direction from point to light (light.position is in eye coords).
-		vec3 L = normalize(l.position - p);
-		// Diffuse term
-		float NdotL = max(dot(n, L), 0.0);
-		vec3 diffuse = material.kd * l.color * NdotL;
-		
-		// Specular term (only when surface faces light)
-		vec3 specular = vec3(0.0);
-		if (NdotL > 0.0) {
-			// Reflection vector of -L around normal n
-			vec3 R = reflect(-L, n);
-			float RdotV = max(dot(R, v), 0.0);
-			float specFactor = pow(RdotV, material.ke);
-			specular = material.ks * l.color * specFactor;
-		}
-		
-		return diffuse + specular;
-	}
-	
-	// Phong illumination for multiple light sources
-	vec3 phong(vec3 p, vec3 n, vec3 v) {
-		// Calculate ambient light contribution.
-		vec3 result = material.ka * ambientLight;
-		
-		// Add light from all light sources.
-		for(int j = 0; j < MAX_LIGHT_SOURCES; j++){
-			if(light[j].isOn){
-				result += phong(p, n, v, light[j]);
-			}
-		}
-		return result;
-	}
-	
-	void main(){
-		// Calculate vertex position in eye coordinates. 
-		vec4 tPosition = uMVMatrix * vec4(aPosition, 1.0);
-		// Calculate projection.
-		gl_Position = uPMatrix * tPosition;
-	
-		// Transform and normalize normal.
-		vec3 tNormal = normalize(uNMatrix * aNormal);
-		
-		// Calculate view vector (from point towards eye) in eye coords.
-		vec3 v = normalize(-tPosition.xyz);	
-		
-		// Compute final color using Phong illumination (RGB), alpha = 1.
-		vColor = vec4( phong(tPosition.xyz, tNormal, v), 1.0);
-	}
-</script>
-    <script type="x-shader/x-fragment" id="fragmentshader">
-			precision mediump float;
-			
-			varying vec4 vColor;
-			
-			void main() {
-				gl_FragColor = vColor;
-			}
-		</script>
-</head>
 
+    <!-- Vertex shader: liefert Position & Normal in Eye-Koordinaten -->
+    <script type="x-shader/x-vertex" id="vertexshader">
+    attribute vec3 aPosition;
+    attribute vec3 aNormal;
+
+    uniform mat4 uPMatrix;
+    uniform mat4 uMVMatrix;
+    uniform mat3 uNMatrix;
+
+    varying vec3 vNormal;
+    varying vec4 vPosition; // in eye coordinates (homogen, damit -vPosition.xyz funktioniert)
+
+    void main() {
+        vec4 posEye = uMVMatrix * vec4(aPosition, 1.0);
+        vPosition = posEye;
+        vNormal = normalize(uNMatrix * aNormal);
+        gl_Position = uPMatrix * posEye;
+    }
+    </script>
+
+    <!-- Fragment shader: unterstützt Phong & Toon (umschaltbar via useToon uniform) -->
+    <script type="x-shader/x-fragment" id="fragmentshader">
+    precision mediump float;
+
+    varying vec3 vNormal;
+    varying vec4 vPosition;
+
+    // Material struct
+    struct PhongMaterial {
+        vec3 ka;
+        vec3 kd;
+        vec3 ks;
+        float ke;
+    };
+    uniform PhongMaterial material;
+
+    // Ambient
+    uniform vec3 ambientLight;
+
+    // Lights
+    const int MAX_LIGHT_SOURCES = 8;
+    struct LightSource {
+        bool isOn;
+        vec3 position; // in eye coords
+        vec3 color;
+    };
+    uniform LightSource light[MAX_LIGHT_SOURCES];
+
+    // Toon controls
+    uniform bool useToon;
+    uniform int uToonLevels;
+    uniform float uSpecThreshold;
+
+    // small helper: quantize between 0..1 into 'levels'
+    float quantize01(float x, int levels) {
+        if (levels <= 1) return step(0.0, x);
+        float L = float(levels - 1);
+        // clamp for safety
+        float c = clamp(x, 0.0, 1.0);
+        return floor(c * L + 0.5) / L;
+    }
+
+    // Phong per light
+    vec3 phongSingle(vec3 p, vec3 n, vec3 v, LightSource l) {
+        vec3 L = normalize(l.position - p);
+        float NdotL = max(dot(n, L), 0.0);
+        vec3 diffuse = material.kd * l.color * NdotL;
+        vec3 specular = vec3(0.0);
+        if (NdotL > 0.0) {
+            vec3 R = reflect(-L, n);
+            float RdotV = max(dot(R, v), 0.0);
+            specular = material.ks * l.color * pow(RdotV, material.ke);
+        }
+        return diffuse + specular;
+    }
+
+    // Full Phong (all lights)
+    vec3 shadePhong(vec3 p, vec3 n, vec3 v) {
+        vec3 result = material.ka * ambientLight;
+        for (int j = 0; j < MAX_LIGHT_SOURCES; j++) {
+            if (light[j].isOn) {
+                result += phongSingle(p, n, v, light[j]);
+            }
+        }
+        return result;
+    }
+
+    // Toon shading (max contribution across lights + quantize)
+    vec3 shadeToon(vec3 p, vec3 n, vec3 v) {
+        vec3 result = material.ka * ambientLight;
+        float maxDiffuse = 0.0;
+        float maxSpec = 0.0;
+        for (int j = 0; j < MAX_LIGHT_SOURCES; j++) {
+            if (!light[j].isOn) continue;
+            vec3 L = normalize(light[j].position - p);
+            float NdotL = max(dot(n, L), 0.0);
+            maxDiffuse = max(maxDiffuse, NdotL);
+            vec3 R = reflect(-L, n);
+            float s = pow(max(dot(R, v), 0.0), material.ke);
+            maxSpec = max(maxSpec, s);
+        }
+        float diffT = quantize01(maxDiffuse, uToonLevels);
+        float specT = step(uSpecThreshold, maxSpec);
+        vec3 diffuse = diffT * material.kd;
+        vec3 specular = specT * material.ks;
+        return result + diffuse + specular;
+    }
+
+    void main() {
+        vec3 n = normalize(vNormal);
+        vec3 v = normalize(-vPosition.xyz);
+
+        vec3 color = useToon ? shadeToon(vPosition.xyz, n, v) : shadePhong(vPosition.xyz, n, v);
+        gl_FragColor = vec4(color, 1.0);
+    }
+    </script>
+
+</head>
 <body onload="app.start()">
     <canvas id="canvas" width="500" height="500"></canvas>
-	<div id="controls">
+    <div id="controls">
 		<h1>ESA 8 - Lichter auf einer Kreisbahn</h1>
 		<ul>
 			<li>
@@ -179,11 +147,10 @@
 				l/L: Bewegung der Lichter<br>
 				<br>
 
-				T: An- und abschalten des Toon-Shaders<br>
+				T: Aktivierung des Toon-Shaders<br>
 
 
 			</li>
-			<br>
 
 			<br>
 			<li>
@@ -194,5 +161,4 @@
 		</ul>
     </div>
 </body>
-
 </html>
