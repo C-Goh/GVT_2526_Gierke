@@ -1,15 +1,74 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8" />
     <title>ESA8 - Lichter auf einer Kreisbahn</title>
     <style>
-        body { margin: 0; height: 100vh; display: flex; justify-content: space-between; align-items: center; background-color: #2b2b2b; color: white; font-family: Arial, sans-serif; }
-        #canvas { max-width: 70%; margin-left: 200px; background-color: #111; }
-        #controls { width: 35%; margin-right: 200px; display: flex; flex-direction: column; justify-content: center; align-items: left; gap: 20px; padding: 20px; background-color: #3a3a3a; border-left: 2px solid #555; border-radius: 12px 0 0 12px; box-shadow: -2px 0 10px rgba(0,0,0,0.5); }
-        button { width: 80%; padding: 12px; font-size: 16px; color: #fff; background-color: #555; border: none; border-radius: 8px; cursor: pointer; transition: background 0.3s; }
-        button:hover { background-color: #777; }
-        h1 { margin-bottom: 10px; }
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2b2b2b;
+            /* dunkelgrauer Hintergrund */
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        #canvas {
+            max-width: 70%;
+            margin-left: 200px;
+            background-color: #111;
+        }
+
+        #controls {
+            width: 35%;
+            margin-right: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: left;
+            gap: 20px;
+            padding: 20px;
+            background-color: #3a3a3a;
+            border-left: 2px solid #555;
+            border-radius: 12px 0 0 12px;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        ul {
+            display: block;
+            margin-block-start: 1em;
+            margin-block-end: 1em;
+            padding-inline-start: 40px;
+            unicode-bidi: isolate;
+        }
+
+        button {
+            width: 80%;
+            padding: 12px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #555;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #777;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        h3 {
+            margin-bottom: 5px;
+        }
     </style>
 
     <script src="./ext/gl-matrix.js"></script>
@@ -66,12 +125,10 @@
     };
     uniform LightSource light[MAX_LIGHT_SOURCES];
 
-    // Toon controls
     uniform bool useToon;
     uniform int uToonLevels;
     uniform float uSpecThreshold;
 
-    // small helper: quantize between 0..1 into 'levels'
     float quantize01(float x, int levels) {
         if (levels <= 1) return step(0.0, x);
         float L = float(levels - 1);
@@ -94,7 +151,7 @@
         return diffuse + specular;
     }
 
-    // Full Phong (all lights)
+    // Full Phong
     vec3 shadePhong(vec3 p, vec3 n, vec3 v) {
         vec3 result = material.ka * ambientLight;
         for (int j = 0; j < MAX_LIGHT_SOURCES; j++) {
@@ -105,7 +162,7 @@
         return result;
     }
 
-    // Toon shading (max contribution across lights + quantize)
+    // Toon shading
     vec3 shadeToon(vec3 p, vec3 n, vec3 v) {
         vec3 result = material.ka * ambientLight;
         float maxDiffuse = 0.0;
@@ -136,29 +193,45 @@
     </script>
 
 </head>
+
 <body onload="app.start()">
     <canvas id="canvas" width="500" height="500"></canvas>
     <div id="controls">
-		<h1>ESA 8 - Lichter auf einer Kreisbahn</h1>
-		<ul>
-			<li>
-				<b>Steuerung:</b> <br>
-				<br>
-				l/L: Bewegung der Lichter<br>
-				<br>
+        <h1>ESA 8 - Lichter auf einer Kreisbahn</h1>
+        <ul>
+            <li>
+                <b>Steuerung:</b> <br>
+                <br>
+                l/L: Bewegung der Lichter<br>
+                <br>
+                C: Kamerarotation<br>
+                H: Kamerawinkel<br>
+                D: Kameraentfernung<br>
+                V: Kamerazoom<br>
+                <br>
 
-				T: Aktivierung des Toon-Shaders<br>
+                O: Ortho <br>
+                F: Frustum <br>
+                P: Perspective <br>
+
+                <br>
+
+                T: Aktivierung des Toon-Shaders<br>
 
 
-			</li>
+            </li>
 
-			<br>
-			<li>
-				<b>Quelle:</b>
-				Als Vorlage wurde das Kursmaterial verwendet.
-				
-			</li>
-		</ul>
+            <br>
+            <li>
+                <b>Quelle:</b>
+                Als Vorlage wurde das Kursmaterial verwendet.
+                http://de.wikipedia.org/wiki/Cel_Shading
+                http://en.wikibooks.org/wiki/GLSL_Programming/Unity/Toon_Shading
+                https://webglsamples.org/toon-shading/toon-shading.html
+
+            </li>
+        </ul>
     </div>
 </body>
+
 </html>

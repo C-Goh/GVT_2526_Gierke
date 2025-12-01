@@ -192,7 +192,7 @@ var app = (function () {
         var mBlue = createPhongMaterial({ ka: [0., 0., 1.], kd: [0., 0., 1.], ks: [0.2, 0.2, 0.5] });
         var mWhite = createPhongMaterial({ ka: [1., 1., 1.], kd: [.5, .5, .5], ks: [0., 0., 0.] });
 
-        createModel("torus", fs, [1, 1, 1, 1], [0, .75, 0], [0, 0, 0], [1, 1, 1], mBlue);
+        createModel("torus", fs, [1, 1, 1, 1], [0, .8, 0], [0, 0, 0], [1, 1, 1], mBlue);
         createModel("sphere", fs, [1, 1, 1, 1], [-1.25, .5, 0], [0, 0, 0], [.5, .5, .5], mYellow);
         createModel("sphere", fs, [1, 1, 1, 1], [1.25, .5, 0], [0, 0, 0], [.5, .5, .5], mYellow);
 
@@ -291,9 +291,6 @@ var app = (function () {
             }
 
             switch (c) {
-                case ('R'):
-                    animateLights = !animateLights;
-                    break;
                 case ('T'):
                     useToon = !useToon;
                     break;
