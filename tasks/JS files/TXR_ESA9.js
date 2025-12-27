@@ -2,6 +2,8 @@ var app = (function () {
 
     var gl;
 
+    var useProceduralTexture = false;
+
     // The shader program object is also used to
     // store attribute and uniform locations.
     var prog;
@@ -131,6 +133,11 @@ var app = (function () {
     }
 
     function initUniforms() {
+
+        prog.useProceduralUniform =
+            gl.getUniformLocation(prog, "uUseProcedural");
+
+
         // Projection Matrix.
         prog.pMatrixUniform = gl.getUniformLocation(prog, "uPMatrix");
 
@@ -380,6 +387,8 @@ var app = (function () {
             var c = String.fromCharCode(key);
 
 
+
+
             // console.log(evt);
             // Use shift key to change sign.
             var sign = evt.shiftKey ? -1 : 1;
@@ -439,6 +448,9 @@ var app = (function () {
                     // Camera near plane dimensions.
                     camera.lrtb += sign * 0.1;
                     break;
+                case ('T'):
+                    useProceduralTexture = !useProceduralTexture;
+                    break;
             }
 
             // 🔹 Pfeiltasten für Kamera
@@ -471,6 +483,9 @@ var app = (function () {
     function render() {
         // Clear framebuffer and depth-/z-buffer.
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        gl.uniform1i(prog.useProceduralUniform, useProceduralTexture);
+
 
         setProjection();
 
