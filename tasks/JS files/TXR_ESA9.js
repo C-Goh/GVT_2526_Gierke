@@ -252,7 +252,7 @@ var app = (function () {
         });
 
         createModel("torus", fs, [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0,
-            0], [1, 1, 1, 1], mGrey, "../images/x.png");
+            0], [1, 1, 1, 1], mGrey, "../images/TorusTextur.png");
 
 
         // Select one model that can be manipulated interactively by user.
@@ -327,7 +327,9 @@ var app = (function () {
         gl.bufferData(gl.ARRAY_BUFFER, model.normals, gl.STATIC_DRAW);
         // Bind buffer to attribute variable.
         prog.normalAttrib = gl.getAttribLocation(prog, 'aNormal');
-        gl.enableVertexAttribArray(prog.normalAttrib);
+        if (prog.normalAttrib !== -1) {
+            gl.enableVertexAttribArray(prog.normalAttrib);
+        }
 
         // Setup texture coordinate vertex buffer object.
         model.vboTextureCoord = gl.createBuffer();
@@ -336,7 +338,19 @@ var app = (function () {
         // Bind buffer to attribute variable.
         prog.textureCoordAttrib = gl
             .getAttribLocation(prog, 'aTextureCoord');
-        gl.enableVertexAttribArray(prog.textureCoordAttrib);
+        if (prog.textureCoordAttrib !== -1) {
+            gl.enableVertexAttribArray(prog.textureCoordAttrib);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, model.vboTextureCoord);
+            gl.vertexAttribPointer(
+                prog.textureCoordAttrib,
+                2,
+                gl.FLOAT,
+                false,
+                0,
+                0
+            );
+        }
 
         // Setup lines index buffer object.
         model.iboLines = gl.createBuffer();
@@ -364,6 +378,8 @@ var app = (function () {
         window.onkeydown = function (evt) {
             var key = evt.which ? evt.which : evt.keyCode;
             var c = String.fromCharCode(key);
+
+
             // console.log(evt);
             // Use shift key to change sign.
             var sign = evt.shiftKey ? -1 : 1;
@@ -424,6 +440,26 @@ var app = (function () {
                     camera.lrtb += sign * 0.1;
                     break;
             }
+
+            // 🔹 Pfeiltasten für Kamera
+            switch (key) {
+                case 37: // ← links
+                    camera.zAngle -= deltaRotate;
+                    break;
+
+                case 39: // → rechts
+                    camera.zAngle += deltaRotate;
+                    break;
+
+                case 38: // ↑ näher ran
+                    camera.distance -= deltaTranslate;
+                    break;
+
+                case 40: // ↓ weiter weg
+                    camera.distance += deltaTranslate;
+                    break;
+            }
+
             // Render the scene again on any key pressed.
             render();
         };
@@ -564,9 +600,11 @@ var app = (function () {
             .vertexAttribPointer(prog.positionAttrib, 3, gl.FLOAT,
                 false, 0, 0);
 
-        // Setup normal VBO.
-        gl.bindBuffer(gl.ARRAY_BUFFER, model.vboNormal);
-        gl.vertexAttribPointer(prog.normalAttrib, 3, gl.FLOAT, false, 0, 0);
+        if (prog.normalAttrib !== -1) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, model.vboNormal);
+            gl.vertexAttribPointer(prog.normalAttrib, 3, gl.FLOAT, false, 0, 0);
+        }
+
 
         // Setup texture VBO.
         gl.bindBuffer(gl.ARRAY_BUFFER, model.vboTextureCoord);
@@ -589,7 +627,9 @@ var app = (function () {
         if (wireframe) {
             gl.uniform4fv(prog.colorUniform, [0., 0., 0., 1.]);
             gl.disableVertexAttribArray(prog.normalAttrib);
-            gl.disableVertexAttribArray(prog.textureCoordAttrib);
+            if (prog.textureCoordAttrib !== -1) {
+                gl.disableVertexAttribArray(prog.textureCoordAttrib);
+            }
 
             gl.vertexAttrib3f(prog.normalAttrib, 0, 0, 0);
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.iboLines);

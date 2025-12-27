@@ -76,28 +76,31 @@
 
     <script src="./JS files/TXR_ESA9.js"></script>
     <script type="x-shader/x-vertex" id="vertexshader">
-			attribute vec3 aPosition;
-			attribute vec3 aNormal;
+attribute vec3 aPosition;
+attribute vec2 aTextureCoord;
 
-			uniform mat4 uPMatrix;
-			uniform mat4 uMVMatrix;
+uniform mat4 uPMatrix;
+uniform mat4 uMVMatrix;
 
-			varying vec4 vColor;
+varying vec2 vTextureCoord;
 
-			void main(){
-			gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
+void main() {
+    gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
+    vTextureCoord = aTextureCoord;
+}
 
-			vColor = vec4(aNormal.x, aNormal.y, aNormal.z, 1.0);
-			vColor = (vColor + 1.0) / 2.0;
-			}
+
 		</script>
     <script type="x-shader/x-fragment" id="fragmentshader">
 			precision mediump float;
-			varying vec4 vColor;
 
-			void main() {
-			gl_FragColor = vColor;
-			}
+varying vec2 vTextureCoord;
+uniform sampler2D uTexture;
+
+void main() {
+    gl_FragColor = texture2D(uTexture, vTextureCoord);
+}
+
 		</script>
 </head>
 
@@ -110,7 +113,7 @@
             <li>
                 <b>Steuerung:</b> <br>
                 <br>
-                K: Animation stoppen/starten <br>
+                Pfeiltasten: Kamerasteuerung <br>
                 <br>
                 C / Shift C: Kamera Orbit<br>
                 <br>
@@ -127,7 +130,8 @@
             </li>
             <br>
             <li>
-                Ziel war es dem Torus eine Textur zu verleihen.
+                Ziel war es dem Torus eine Textur zu verleihen. 
+                Die Textur wurde mit Adobe Firefly generiert.
             </li>
             <br>
             <li>
