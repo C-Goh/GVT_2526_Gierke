@@ -359,6 +359,14 @@ var app = (function () {
             );
         }
 
+        if (prog.normalAttrib !== -1) {
+            gl.enableVertexAttribArray(prog.normalAttrib);
+        }
+        if (prog.textureCoordAttrib !== -1) {
+            gl.enableVertexAttribArray(prog.textureCoordAttrib);
+        }
+
+
         // Setup lines index buffer object.
         model.iboLines = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.iboLines);
@@ -629,7 +637,11 @@ var app = (function () {
         // Setup rendering tris.
         var fill = (model.fillstyle.search(/fill/) != -1);
         if (fill) {
-            gl.enableVertexAttribArray(prog.normalAttrib);
+            if (prog.normalAttrib !== -1) {
+                gl.disableVertexAttribArray(prog.normalAttrib);
+                gl.vertexAttrib3f(prog.normalAttrib, 0, 0, 0);
+            }
+
             gl.enableVertexAttribArray(prog.textureCoordAttrib);
 
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.iboTris);
